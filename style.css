@@ -1,0 +1,26 @@
+body {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #222;
+    font-family: 'Arial', sans-serif;
+    overflow: hidden;
+}
+
+canvas {
+    border: 4px solid #fff;
+    background-color: #70c5ce;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
+
+#instrucoes {
+    position: absolute;
+    top: 20px;
+    color: white;
+    font-size: 18px;
+    text-align: center;
+    pointer-events: none;
+}
