@@ -1,0 +1,162 @@
+import { ctx, canvas, gameProps } from './state.js';
+import { SKINS, CARD_PRICE, SLOWMO_PRICE } from './constants.js';
+import { saveShopData } from './storage.js';
+import { saveTotalCoins, getTotalCoins } from './storage.js';
+import { playBuy } from './audio.js';
+
+const shopItems = [];
+const cardButton = {};
+const exitButton = {};
+const slowMoButton = {};
+
+function setupShopLayout() {
+    shopItems.length = 0;
+    SKINS.forEach((skin, index) => {
+        shopItems.push({
+            ...skin,
+            rect: {
+                x: 50,
+                y: 150 + index * 80,
+                w: canvas.width - 100,
+                h: 70
+            }
+        });
+    });
+
+    cardButton.rect = { x: 50, y: 150 + SKINS.length * 80, w: canvas.width - 100, h: 70 };
+    slowMoButton.rect = { x: 50, y: 150 + (SKINS.length + 1) * 80, w: canvas.width - 100, h: 70 };
+    exitButton.rect = { x: canvas.width / 2 - 75, y: canvas.height - 120, w: 150, h: 50 };
+}
+
+export function drawShop() {
+    if (shopItems.length === 0) setupShopLayout();
+
+    // Fundo
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Título
+    ctx.fillStyle = '#FFD700';
+    ctx.font = "bold 40px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText("LOJA", canvas.width / 2, 80);
+
+    // Moedas
+    ctx.font = "24px Arial";
+    ctx.fillText(`💰 ${gameProps.totalCoins}`, canvas.width / 2, 120);
+
+    // Itens (Skins)
+    shopItems.forEach(item => {
+        const isOwned = gameProps.shopData.purchasedSkins.includes(item.id);
+        const isEquipped = gameProps.shopData.equippedSkin === item.id;
+
+        ctx.fillStyle = isEquipped ? '#004466' : '#333';
+        ctx.fillRect(item.rect.x, item.rect.y, item.rect.w, item.rect.h);
+        ctx.strokeStyle = isEquipped ? '#00BFFF' : '#888';
+        ctx.strokeRect(item.rect.x, item.rect.y, item.rect.w, item.rect.h);
+
+        ctx.fillStyle = item.color;
+        ctx.beginPath();
+        ctx.arc(item.rect.x + 40, item.rect.y + 35, 20, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#FFF';
+        ctx.font = "20px Arial";
+        ctx.textAlign = "left";
+        ctx.fillText(item.name, item.rect.x + 80, item.rect.y + 30);
+
+        ctx.font = "16px Arial";
+        if (isOwned) {
+            ctx.fillStyle = isEquipped ? '#00BFFF' : '#00FF00';
+            ctx.fillText(isEquipped ? "Equipado" : "Equipar", item.rect.x + 80, item.rect.y + 55);
+        } else {
+            ctx.fillStyle = gameProps.totalCoins >= item.price ? '#FFD700' : '#FF6B6B';
+            ctx.fillText(`Comprar: ${item.price} 💰`, item.rect.x + 80, item.rect.y + 55);
+        }
+    });
+
+    // Botão de Comprar Carta
+    ctx.fillStyle = '#333';
+    ctx.fillRect(cardButton.rect.x, cardButton.rect.y, cardButton.rect.w, cardButton.rect.h);
+    ctx.strokeStyle = '#888';
+    ctx.strokeRect(cardButton.rect.x, cardButton.rect.y, cardButton.rect.w, cardButton.rect.h);
+    ctx.fillStyle = '#FFF';
+    ctx.textAlign = "left";
+    ctx.font = "20px Arial";
+    ctx.fillText(`Carta de Imunidade [E] (x${gameProps.shopData.immunityCards})`, cardButton.rect.x + 20, cardButton.rect.y + 30);
+    ctx.fillStyle = gameProps.totalCoins >= CARD_PRICE ? '#FFD700' : '#FF6B6B';
+    ctx.font = "16px Arial";
+    ctx.fillText(`Comprar 1 por: ${CARD_PRICE} 💰`, cardButton.rect.x + 20, cardButton.rect.y + 55);
+
+    // Botão de Comprar Slow-Mo
+    ctx.fillStyle = '#333';
+    ctx.fillRect(slowMoButton.rect.x, slowMoButton.rect.y, slowMoButton.rect.w, slowMoButton.rect.h);
+    ctx.strokeStyle = '#888';
+    ctx.strokeRect(slowMoButton.rect.x, slowMoButton.rect.y, slowMoButton.rect.w, slowMoButton.rect.h);
+    ctx.fillStyle = '#FFF';
+    ctx.textAlign = "left";
+    ctx.font = "20px Arial";
+    ctx.fillText(`Carga de Slow-Mo [T] (x${gameProps.shopData.slowMoCharges})`, slowMoButton.rect.x + 20, slowMoButton.rect.y + 30);
+    ctx.fillStyle = gameProps.totalCoins >= SLOWMO_PRICE ? '#FFD700' : '#FF6B6B';
+    ctx.font = "16px Arial";
+    ctx.fillText(`Comprar 1 por: ${SLOWMO_PRICE} 💰`, slowMoButton.rect.x + 20, slowMoButton.rect.y + 55);
+
+    // Botão de Sair
+    ctx.fillStyle = '#AA0000';
+    ctx.fillRect(exitButton.rect.x, exitButton.rect.y, exitButton.rect.w, exitButton.rect.h);
+    ctx.fillStyle = '#FFF';
+    ctx.font = "24px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText("Sair", canvas.width / 2, exitButton.rect.y + 33);
+}
+
+export function handleShopClick(x, y) {
+    // Clicou em Sair
+    if (x > exitButton.rect.x && x < exitButton.rect.x + exitButton.rect.w && y > exitButton.rect.y && y < exitButton.rect.y + exitButton.rect.h) {
+        gameProps.isShopOpen = false;
+        return;
+    }
+
+    // Clicou em Comprar Carta
+    if (x > cardButton.rect.x && x < cardButton.rect.x + cardButton.rect.w && y > cardButton.rect.y && y < cardButton.rect.y + cardButton.rect.h) {
+        if (gameProps.totalCoins >= CARD_PRICE) {
+            gameProps.totalCoins -= CARD_PRICE;
+            gameProps.shopData.immunityCards++;
+            saveTotalCoins(-CARD_PRICE);
+            saveShopData(gameProps.shopData);
+            playBuy();
+        }
+    }
+
+    // Clicou em Comprar Slow-Mo
+    if (x > slowMoButton.rect.x && x < slowMoButton.rect.x + slowMoButton.rect.w && y > slowMoButton.rect.y && y < slowMoButton.rect.y + slowMoButton.rect.h) {
+        if (gameProps.totalCoins >= SLOWMO_PRICE) {
+            gameProps.totalCoins -= SLOWMO_PRICE;
+            gameProps.shopData.slowMoCharges++;
+            saveTotalCoins(-SLOWMO_PRICE);
+            saveShopData(gameProps.shopData);
+            playBuy();
+        }
+    }
+
+    // Clicou em um item de Skin
+    shopItems.forEach(item => {
+        if (x > item.rect.x && x < item.rect.x + item.rect.w && y > item.rect.y && y < item.rect.y + item.rect.h) {
+            const isOwned = gameProps.shopData.purchasedSkins.includes(item.id);
+            if (isOwned) {
+                // Equipar
+                gameProps.shopData.equippedSkin = item.id;
+                saveShopData(gameProps.shopData);
+            } else {
+                // Comprar
+                if (gameProps.totalCoins >= item.price) {
+                    gameProps.totalCoins -= item.price;
+                    gameProps.shopData.purchasedSkins.push(item.id);
+                    saveTotalCoins(-item.price);
+                    saveShopData(gameProps.shopData);
+                    playBuy();
+                }
+            }
+        }
+    });
+}

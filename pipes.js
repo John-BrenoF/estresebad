@@ -1,6 +1,7 @@
 import { ctx, canvas, gameProps } from './state.js';
 import { playScore } from './audio.js';
 import { createParticles } from './particles.js';
+import { createCoin } from './coins.js';
 
 export const pipes = [];
 const pipeWidth = 50;
@@ -34,14 +35,20 @@ export function updatePipes(bird, onCollision) {
             bottom: bottomHeight,
             passed: false
         });
+
+        // 50% de chance de gerar uma moeda no vão do cano
+        if (Math.random() < 0.5) {
+            createCoin(canvas.width + pipeWidth / 2, topHeight + pipeGap / 2);
+        }
     }
 
     for (let i = 0; i < pipes.length; i++) {
         let p = pipes[i];
-        p.x -= gameProps.gameSpeed;
+        const speedMultiplier = gameProps.isSlowMoActive ? 0.5 : 1;
+        p.x -= gameProps.gameSpeed * speedMultiplier;
 
         // Colisão com canos fixos
-        if (
+        if (!gameProps.isImmune &&
             bird.x < p.x + pipeWidth &&
             bird.x + bird.width > p.x &&
             (bird.y < p.top || bird.y + bird.height > canvas.height - p.bottom)

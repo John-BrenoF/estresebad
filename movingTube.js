@@ -22,7 +22,8 @@ export function initMovingTube() {
 
 export function updateMovingTube(bird, onCollision) {
     // Movimento horizontal
-    movingTube.x -= gameProps.gameSpeed * 1.2; // Um pouco mais rápido que os canos normais
+    const speedMultiplier = gameProps.isSlowMoActive ? 0.5 : 1;
+    movingTube.x -= gameProps.gameSpeed * 1.2 * speedMultiplier; // Um pouco mais rápido que os canos normais
     
     // Movimento Vertical (Oscilação Senoidal)
     // Usa gameProps.frames para criar um movimento suave de sobe e desce
@@ -54,7 +55,7 @@ export function drawMovingTube() {
 }
 
 function checkMovingTubeCollision(bird, onCollision) {
-    if (bird.x < movingTube.x + movingTube.width && bird.x + bird.width > movingTube.x && (bird.y < movingTube.topHeight || bird.y + bird.height > canvas.height - movingTube.bottomHeight)) {
+    if (!gameProps.isImmune && bird.x < movingTube.x + movingTube.width && bird.x + bird.width > movingTube.x && (bird.y < movingTube.topHeight || bird.y + bird.height > canvas.height - movingTube.bottomHeight)) {
         onCollision();
     }
 }

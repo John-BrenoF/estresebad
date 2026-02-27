@@ -11,6 +11,49 @@ export function drawScore() {
     
     ctx.font = "12px Arial";
     ctx.fillText("Vel: " + gameProps.gameSpeed.toFixed(1), 10, 20);
+
+    // Desenhar Moedas
+    ctx.fillStyle = '#FFD700';
+    ctx.fillText("💰 " + gameProps.currentCoins, 10, 40);
+
+    // UI da Carta de Imunidade
+    if (gameProps.shopData) {
+        ctx.font = "14px Arial";
+        ctx.fillStyle = '#FFF';
+        ctx.fillText(`Imune [E]: ${gameProps.shopData.immunityCards}`, canvas.width - 120, 20);
+        if (gameProps.isImmune) {
+            ctx.fillStyle = '#00FFFF';
+            ctx.fillText(`ATIVO!`, canvas.width - 120, 40);
+        } else if (gameProps.cardCooldownTimer > 0) {
+            ctx.fillStyle = '#FF6B6B';
+            const cooldown = (gameProps.cardCooldownTimer / 60).toFixed(1);
+            ctx.fillText(`Recarga: ${cooldown}s`, canvas.width - 120, 40);
+        }
+
+        // UI do Ímã
+        ctx.fillStyle = '#FFF';
+        ctx.fillText(`Ímã [M]`, canvas.width - 120, 60);
+        if (gameProps.isMagnetActive) {
+            ctx.fillStyle = '#FFD700';
+            ctx.fillText(`ATIVO!`, canvas.width - 120, 80);
+        } else if (gameProps.magnetCooldownTimer > 0) {
+            ctx.fillStyle = '#FF6B6B';
+            const cooldown = (gameProps.magnetCooldownTimer / 60).toFixed(1);
+            ctx.fillText(`Recarga: ${cooldown}s`, canvas.width - 120, 80);
+        }
+
+        // UI do Slow-Mo
+        ctx.fillStyle = '#FFF';
+        ctx.fillText(`Slow-Mo [T]: ${gameProps.shopData.slowMoCharges}`, canvas.width - 120, 100);
+        if (gameProps.isSlowMoActive) {
+            ctx.fillStyle = '#4ECDC4';
+            ctx.fillText(`ATIVO!`, canvas.width - 120, 120);
+        } else if (gameProps.slowMoCooldownTimer > 0) {
+            ctx.fillStyle = '#FF6B6B';
+            const cooldown = (gameProps.slowMoCooldownTimer / 60).toFixed(1);
+            ctx.fillText(`Recarga: ${cooldown}s`, canvas.width - 120, 120);
+        }
+    }
 }
 
 export function drawHighScores() {
@@ -81,6 +124,14 @@ export function drawGameOverScreen() {
     ctx.fillStyle = '#FFF';
     ctx.font = "25px Arial";
     ctx.fillText("Pontuação: " + gameProps.score, canvas.width / 2, canvas.height / 2 - 55);
+
+    ctx.fillStyle = '#FFD700';
+    ctx.font = "20px Arial";
+    ctx.fillText("💰 Moedas: " + (gameProps.totalCoins + gameProps.currentCoins), canvas.width / 2, canvas.height / 2 - 80);
+
+    ctx.fillStyle = '#FFFF00';
+    ctx.font = "18px Arial";
+    ctx.fillText("⚡ Raios Sobrevividos: " + gameProps.lightningSurvived, canvas.width / 2, canvas.height / 2 - 25);
     
     if (gameProps.isNewHighScore) {
         ctx.fillStyle = '#FFD700';
@@ -94,9 +145,13 @@ export function drawGameOverScreen() {
     ctx.font = "18px Arial";
     ctx.fillText("Clique ou Espaço para sortear tempo", canvas.width / 2, canvas.height - 60);
     ctx.fillText("e iniciar nova partida", canvas.width / 2, canvas.height - 35);
+    ctx.fillText("Pressione 'L' para ir à Loja", canvas.width / 2, canvas.height - 10);
     
     ctx.textAlign = "left";
 }
+
+const startButton = { x: canvas.width / 2 - 100, y: canvas.height / 2, w: 200, h: 50 };
+const shopButton = { x: canvas.width / 2 - 100, y: canvas.height / 2 + 70, w: 200, h: 50 };
 
 export function drawStartScreen() {
     ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
@@ -105,14 +160,32 @@ export function drawStartScreen() {
     ctx.fillStyle = '#FFD700';
     ctx.font = "bold 40px Arial";
     ctx.textAlign = "center";
-    ctx.fillText("MORCEGO FLAP", canvas.width / 2, canvas.height / 2 - 50);
+    ctx.fillText("MORCEGO FLAP", canvas.width / 2, canvas.height / 2 - 80);
     
+    // Botão Iniciar
+    ctx.fillStyle = '#2E8B57';
+    ctx.fillRect(startButton.x, startButton.y, startButton.w, startButton.h);
     ctx.fillStyle = '#FFF';
-    ctx.font = "20px Arial";
-    ctx.fillText("Pressione Espaço ou Clique", canvas.width / 2, canvas.height / 2 + 10);
-    ctx.fillText("para começar", canvas.width / 2, canvas.height / 2 + 40);
+    ctx.font = "24px Arial";
+    ctx.fillText("Iniciar", canvas.width / 2, startButton.y + 33);
 
-    ctx.font = "14px Arial";
-    ctx.fillText("Evite os canos e o tubo móvel!", canvas.width / 2, canvas.height - 50);
+    // Botão Loja
+    ctx.fillStyle = '#4682B4';
+    ctx.fillRect(shopButton.x, shopButton.y, shopButton.w, shopButton.h);
+    ctx.fillStyle = '#FFF';
+    ctx.fillText("Loja", canvas.width / 2, shopButton.y + 33);
+
     ctx.textAlign = "left";
+}
+
+export function handleMenuClick(x, y) {
+    // Clicou em Iniciar
+    if (x > startButton.x && x < startButton.x + startButton.w && y > startButton.y && y < startButton.y + startButton.h) {
+        return 'start';
+    }
+    // Clicou em Loja
+    if (x > shopButton.x && x < shopButton.x + shopButton.w && y > shopButton.y && y < shopButton.y + shopButton.h) {
+        return 'shop';
+    }
+    return null;
 }
