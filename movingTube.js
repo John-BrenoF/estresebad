@@ -55,6 +55,24 @@ export function updateMovingTube(bird, onCollision) {
 export function drawMovingTube() {
     if (!movingTube.active) return;
 
+    // --- MODO GEOMETRY (Pilar de Laser) ---
+    if (gameProps.isGeometryMode) {
+        ctx.save();
+        ctx.fillStyle = '#220000';
+        ctx.strokeStyle = '#FF0000'; // Vermelho Neon
+        ctx.lineWidth = 4;
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = '#FF0000';
+
+        ctx.fillRect(movingTube.x, 0, movingTube.width, movingTube.topHeight);
+        ctx.strokeRect(movingTube.x, 0, movingTube.width, movingTube.topHeight);
+        ctx.fillRect(movingTube.x, canvas.height - movingTube.bottomHeight, movingTube.width, movingTube.bottomHeight);
+        ctx.strokeRect(movingTube.x, canvas.height - movingTube.bottomHeight, movingTube.width, movingTube.bottomHeight);
+        ctx.restore();
+        return;
+    }
+    // --------------------------------------
+
     ctx.fillStyle = '#FF6B35';
     ctx.fillRect(movingTube.x, 0, movingTube.width, movingTube.topHeight);
     ctx.fillRect(movingTube.x, canvas.height - movingTube.bottomHeight, movingTube.width, movingTube.bottomHeight);

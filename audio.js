@@ -180,7 +180,7 @@ export function playGhost() {
     osc.stop(audioCtx.currentTime + 1.5);
 }
 
-const normalMusic = new Audio('dunkirk.mp3'); // Certifique-se de que o caminho está correto
+const normalMusic = new Audio('musicap.mp3'); // Certifique-se de que o caminho está correto
 normalMusic.loop = true;
 
 export function playNormalMusic() {
@@ -264,4 +264,23 @@ export function playPlayerShield() {
 
     osc.start();
     osc.stop(audioCtx.currentTime + 0.2);
+}
+
+export function playCloneSpawn() {
+    resumeAudio();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(1600, audioCtx.currentTime + 0.3);
+    
+    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+    
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.3);
 }

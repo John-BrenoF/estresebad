@@ -34,6 +34,47 @@ export function initBackground() {
 }
 
 export function updateAndDrawBackground() {
+    // --- MODO GEOMETRY (Visual Grid Neon) ---
+    if (gameProps.isGeometryMode) {
+        // Fundo Roxo Escuro/Azul
+        ctx.fillStyle = '#1a0b2e'; 
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Efeito de Grid em movimento
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'rgba(0, 255, 255, 0.3)'; // Ciano transparente
+        
+        const gridSize = 60;
+        // O offset cria a ilusão de movimento baseada na velocidade do jogo
+        const offsetX = (gameProps.frames * gameProps.gameSpeed * 0.5) % gridSize;
+        
+        // Linhas Verticais (que se movem)
+        for (let x = -offsetX; x < canvas.width; x += gridSize) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, canvas.height);
+            ctx.stroke();
+        }
+
+        // Linhas Horizontais (fixas para dar profundidade ou chão)
+        for (let y = 0; y < canvas.height; y += gridSize) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(canvas.width, y);
+            ctx.stroke();
+        }
+
+        // Chão sólido
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
+        ctx.strokeStyle = '#00FFFF';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(0, canvas.height - 50, canvas.width, 50);
+
+        return;
+    }
+    // ----------------------------------------
+
     // Fundo do céu (gradiente noturno)
     const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
     gradient.addColorStop(0, '#0f2027');

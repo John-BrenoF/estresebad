@@ -5,7 +5,7 @@ import { bird } from './bird.js';
 import { pipes, updatePipes, drawPipes } from './pipes.js';
 import { initMovingTube, updateMovingTube, drawMovingTube } from './movingTube.js';
 import { drawScore, drawWaitingScreen, drawGameOverScreen, drawStartScreen, handleMenuClick, attackButtonRect, shieldButtonRect, furyButtonRect } from './ui.js';
-import { playDie, playShield, playSlowMo, playBossMusic, stopBossMusic, playPlayerAttack, playBossDefeated, playPlayerShield } from './audio.js';
+import { playDie, playShield, playSlowMo, playBossMusic, stopBossMusic, playPlayerAttack, playBossDefeated, playPlayerShield, playNormalMusic, stopNormalMusic } from './audio.js';
 import { createParticles, updateAndDrawParticles, clearParticles } from './particles.js';
 import { initBackground, updateAndDrawBackground } from './background.js';
 import { updateLightning, drawLightning, resetLightning } from './lightning.js';
@@ -14,8 +14,10 @@ import { updateAndDrawCoins, clearCoins } from './coins.js';
 import { drawShop, handleShopClick, handleShopScroll } from './shop.js';
 import { updateGhosts, drawGhosts, resetGhosts } from './ghost.js';
 import { checkAchievements, drawAchievements, loadAchievements } from './achievements.js';
-import { loadMissions, updateMissionProgress, drawMissionMap, handleMissionClick } from './missions.js';
+import { loadMissions, updateMissionProgress, drawMissionMap, handleMissionClick, handleMissionScroll } from './missions.js';
 import { initBoss, updateBoss, drawBoss, boss } from './boss.js';
+import { updateAndDrawFakeCones, resetFakeCones } from './fakeCones.js';
+import { checkGeometryEvent, updateGeometryState, drawGeometryOverlay } from './geometry.js';
 
 let screenShake = { intensity: 0, duration: 0 };
 
@@ -27,6 +29,7 @@ function gameOver() {
     createParticles(bird.x + bird.width / 2, bird.y + bird.height / 2, '#FF4444', 40);
     saveTotalCoins(gameProps.currentCoins);
     stopBossMusic();
+    stopNormalMusic();
     
     if (checkHighScore(gameProps.score)) {
         gameProps.isNewHighScore = true;
@@ -46,6 +49,8 @@ function startWaitingPeriod() {
     
     if (gameProps.isBossMode) {
         playBossMusic();
+    } else {
+        playNormalMusic();
     }
     
     waitLoop();
@@ -78,6 +83,7 @@ function resetGame() {
     resetLightning();
     resetRain();
     resetGhosts();
+    resetFakeCones();
     if (gameProps.isBossMode) initBoss();
     
     loop();
@@ -85,6 +91,19 @@ function resetGame() {
 
 function loop() {
     ctx.save();
+    
+    // Efeito de Pulsação (Zoom In/Out)
+    if (gameProps.pulseScale > 1.0) {
+        gameProps.pulseScale -= 0.002; // Decaimento do zoom
+        if (gameProps.pulseScale < 1.0) gameProps.pulseScale = 1.0;
+        
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        ctx.translate(centerX, centerY);
+        ctx.scale(gameProps.pulseScale, gameProps.pulseScale);
+        ctx.translate(-centerX, -centerY);
+    }
+
     if (screenShake.duration > 0) {
         const dx = (Math.random() - 0.5) * screenShake.intensity;
         const dy = (Math.random() - 0.5) * screenShake.intensity;
@@ -123,8 +142,13 @@ function loop() {
 
     if (gameProps.isWaitingToStart) return;
 
+    // Atualiza estado do Geometry Mode (Cutscene e Timer)
+    updateGeometryState();
+    checkGeometryEvent();
+
     // Atualiza lógica apenas se não for Game Over
-    if (!gameProps.isGameOver) {
+    // E SE NÃO ESTIVER NA CUTSCENE DO GEOMETRY (Pausa o jogo para o aviso)
+    if (!gameProps.isGameOver && !gameProps.isGeometryCutscene) {
         // Player attack cooldown
         if (gameProps.playerAttackCooldown > 0) gameProps.playerAttackCooldown--;
         if (gameProps.playerShieldCooldown > 0) {
@@ -183,6 +207,7 @@ function loop() {
             updateMovingTube(bird, gameOver);
             updateLightning(bird, gameOver);
             updateGhosts(bird, gameOver);
+            updateAndDrawFakeCones(bird); // Efeito visual de cones caindo
         }
         
         updateAndDrawCoins(bird);
@@ -230,9 +255,28 @@ function loop() {
     
     drawAchievements();
     drawScore();
+    drawGeometryOverlay(); // Desenha o aviso ou a barra de tempo
 
     if (gameProps.isGameOver) {
         drawGameOverScreen();
+    }
+
+    // --- EFEITO DE DISTORÇÃO CROMÁTICA (RGB SPLIT SIMULADO) ---
+    if (gameProps.rgbSplitTimer > 0) {
+        gameProps.rgbSplitTimer--;
+        
+        // Intensidade baseada no tempo restante
+        const intensity = (gameProps.rgbSplitTimer / 120);
+        const offset = (Math.random() * 10 + 5) * intensity;
+
+        ctx.save();
+        ctx.globalCompositeOperation = 'screen'; // Mistura aditiva para simular luz
+        ctx.globalAlpha = 0.6 * intensity;
+        
+        // Desenha a tela sobre ela mesma com deslocamentos (Simula canais desajustados)
+        ctx.drawImage(canvas, offset, 0);  // Deslocamento para a direita
+        ctx.drawImage(canvas, -offset, 0); // Deslocamento para a esquerda
+        ctx.restore();
     }
 
     ctx.restore();
@@ -335,6 +379,9 @@ function handleInput(e) {
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
             handleMissionClick(x, y);
+        }
+        if (e.type === 'wheel') {
+            handleMissionScroll(e);
         }
         return;
     }
@@ -470,6 +517,12 @@ canvas.addEventListener('touchmove', (e) => {
         const currentY = e.touches[0].clientY;
         const deltaY = touchStartY - currentY;
         handleShopScroll({ deltaY: deltaY });
+        touchStartY = currentY;
+    } else if (gameProps.isMissionMapOpen) {
+        e.preventDefault();
+        const currentY = e.touches[0].clientY;
+        const deltaY = touchStartY - currentY;
+        handleMissionScroll({ deltaY: deltaY });
         touchStartY = currentY;
     }
 }, { passive: false });

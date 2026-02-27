@@ -1,17 +1,18 @@
-import { ctx } from './state.js';
+import { ctx, gameProps } from './state.js';
 
 const particles = [];
 
 class Particle {
-    constructor(x, y, color) {
+    constructor(x, y, color, type = 'circle') {
         this.x = x;
         this.y = y;
         this.color = color;
-        this.size = Math.random() * 5 + 3;
-        this.speedX = Math.random() * 6 - 3;
-        this.speedY = Math.random() * 6 - 3;
+        this.type = type; // 'circle' ou 'square'
+        this.size = type === 'square' ? 34 : Math.random() * 5 + 3; // 34 é o tamanho do player
+        this.speedX = type === 'square' ? -gameProps.gameSpeed : Math.random() * 6 - 3;
+        this.speedY = type === 'square' ? 0 : Math.random() * 6 - 3;
         this.life = 1.0;
-        this.decay = Math.random() * 0.02 + 0.01;
+        this.decay = type === 'square' ? 0.05 : Math.random() * 0.02 + 0.01;
     }
 
     update() {
@@ -26,16 +27,27 @@ class Particle {
         ctx.fillStyle = this.color;
         ctx.globalAlpha = Math.max(0, this.life);
         ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        ctx.fill();
+        
+        if (this.type === 'square') {
+            // Rastro do Geometry (Quadrado vazado ou preenchido)
+            ctx.fillRect(this.x, this.y, this.size, this.size);
+        } else {
+            // Partículas normais
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
         ctx.globalAlpha = 1.0;
     }
 }
 
 export function createParticles(x, y, color, count = 20) {
     for (let i = 0; i < count; i++) {
-        particles.push(new Particle(x, y, color));
+        particles.push(new Particle(x, y, color, 'circle'));
     }
+}
+
+export function createGeometryTrail(x, y, color) {
+    particles.push(new Particle(x, y, color, 'square'));
 }
 
 export function updateAndDrawParticles() {

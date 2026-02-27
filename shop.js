@@ -3,6 +3,7 @@ import { SKINS, CARD_PRICE, SLOWMO_PRICE } from './constants.js';
 import { saveShopData } from './storage.js';
 import { saveTotalCoins, getTotalCoins } from './storage.js';
 import { playBuy } from './audio.js';
+import { incrementMissionProgress } from './missions.js';
 
 const shopItems = [];
 const cardButton = {};
@@ -147,6 +148,7 @@ export function handleShopClick(x, y) {
             saveTotalCoins(-CARD_PRICE);
             saveShopData(gameProps.shopData);
             playBuy();
+            incrementMissionProgress('buy_item');
         }
     }
 
@@ -158,6 +160,7 @@ export function handleShopClick(x, y) {
             saveTotalCoins(-SLOWMO_PRICE);
             saveShopData(gameProps.shopData);
             playBuy();
+            incrementMissionProgress('buy_item');
         }
     }
 
@@ -177,6 +180,7 @@ export function handleShopClick(x, y) {
                     saveTotalCoins(-item.price);
                     saveShopData(gameProps.shopData);
                     playBuy();
+                    incrementMissionProgress('buy_item');
                 }
             }
         }

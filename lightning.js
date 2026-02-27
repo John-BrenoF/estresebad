@@ -18,7 +18,7 @@ export function resetLightning() {
 
 export function updateLightning(bird, onCollision) {
     // Verifica a cada 60 frames (aprox 1 segundo)
-    if (!lightning.active && !gameProps.isGameOver && !gameProps.isWaitingToStart) {
+    if (!lightning.active && !gameProps.isGameOver && !gameProps.isWaitingToStart && !gameProps.isGeometryMode) {
         const chance = gameProps.lightningChance || 0.1;
         
         if (gameProps.frames % 60 === 0 && Math.random() < chance) {
@@ -37,7 +37,7 @@ export function updateLightning(bird, onCollision) {
                 // Verifica colisão no momento exato do impacto
                 // Hitbox de 40px de largura
                 const hit = bird.x + bird.width > lightning.x - 20 && bird.x < lightning.x + 20;
-                if (hit && !gameProps.isImmune) {
+                if (hit && !gameProps.isImmune && !gameProps.isGeometryMode) {
                     onCollision();
                 } 
                 if (!hit) {

@@ -4,6 +4,7 @@ import { triggerShockwave } from './main.js';
 import { createParticles } from './particles.js';
 import { createCoin } from './coins.js';
 import { spawnMovingTube, movingTube } from './movingTube.js';
+import { finishGeometryMode } from './geometry.js';
 
 export const pipes = [];
 const pipeWidth = 50;
@@ -14,6 +15,93 @@ export function drawPipes() {
         let p = pipes[i];
         if (p.destroyed) continue;
         
+        // --- PORTAL DE SAÍDA (Geometry Mode) ---
+        if (p.isPortal) {
+            ctx.save();
+            const centerX = p.x + p.width / 2;
+            const centerY = p.y + p.height / 2;
+            ctx.translate(centerX, centerY);
+            
+            // Efeito de Rotação do Portal
+            ctx.rotate(gameProps.frames * -0.1);
+
+            // Desenho do Vórtice
+            for (let j = 0; j < 3; j++) {
+                ctx.beginPath();
+                ctx.arc(0, 0, p.width / 2 - (j * 10), 0, Math.PI * 2);
+                ctx.strokeStyle = j % 2 === 0 ? '#00FFFF' : '#FF00FF'; // Ciano e Magenta
+                ctx.lineWidth = 4;
+                ctx.shadowBlur = 20;
+                ctx.shadowColor = ctx.strokeStyle;
+                
+                // Abertura no arco para dar efeito de espiral
+                const startAngle = (gameProps.frames * 0.1) + (j * Math.PI / 2);
+                ctx.arc(0, 0, p.width / 2 - (j * 10), startAngle, startAngle + 4);
+                ctx.stroke();
+            }
+            
+            ctx.restore();
+            continue;
+        }
+        // ---------------------------------------
+
+        // --- OBSTÁCULO SERRA (Geometry Mode) ---
+        if (p.isSaw) {
+            ctx.save();
+            // Move para o centro da serra para rotacionar
+            const centerX = p.x + p.width / 2;
+            const centerY = p.y + p.height / 2;
+            ctx.translate(centerX, centerY);
+            
+            // Rotação baseada nos frames
+            ctx.rotate(gameProps.frames * -0.2); // Gira anti-horário
+
+            // Desenho da Serra
+            ctx.fillStyle = '#888'; // Metal
+            ctx.beginPath();
+            // Cria uma forma dentada
+            const spikes = 8;
+            const outerRadius = p.width / 2;
+            const innerRadius = p.width / 4;
+            for (let j = 0; j < spikes * 2; j++) {
+                const r = (j % 2 === 0) ? outerRadius : innerRadius;
+                const angle = (Math.PI * 2 * j) / (spikes * 2);
+                ctx.lineTo(Math.cos(angle) * r, Math.sin(angle) * r);
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = '#FF0000'; // Borda vermelha perigosa
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Centro da serra
+            ctx.fillStyle = '#333';
+            ctx.beginPath();
+            ctx.arc(0, 0, innerRadius / 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+            continue;
+        }
+
+        // --- MODO GEOMETRY (Blocos Neon) ---
+        if (gameProps.isGeometryMode) {
+            ctx.save();
+            ctx.fillStyle = '#000'; // Interior preto
+            ctx.strokeStyle = '#00FF00'; // Borda Verde Neon
+            ctx.lineWidth = 4;
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#00FF00';
+
+            // Desenha um único bloco no chão
+            ctx.fillRect(p.x, p.y, p.width, p.height);
+            ctx.strokeRect(p.x, p.y, p.width, p.height);
+            
+            ctx.restore();
+            continue;
+        }
+        // -----------------------------------
+
         ctx.fillStyle = '#2E8B57';
         ctx.fillRect(p.x, 0, pipeWidth, p.top);
         ctx.fillRect(p.x, canvas.height - p.bottom, pipeWidth, p.bottom);
@@ -28,6 +116,50 @@ export function drawPipes() {
 export function updatePipes(bird, onCollision) {
     let spawnRate = Math.max(70, 120 - Math.floor(gameProps.score / 5)); 
     
+    // --- LÓGICA DE SPAWN MODO GEOMETRY ---
+    if (gameProps.isGeometryMode) {
+        // Só spawna obstáculos se ainda tiver tempo (> 60 frames)
+        if (gameProps.geometryTimer > 60 && gameProps.frames % spawnRate === 0) {
+            const groundY = canvas.height - 50;
+            
+            // 30% de chance de ser uma Serra, 70% Bloco
+            if (Math.random() < 0.3) {
+                const sawSize = 50;
+                pipes.push({
+                    x: canvas.width,
+                    y: groundY - sawSize + 10, // Levemente enterrada no chão
+                    width: sawSize,
+                    height: sawSize,
+                    passed: false,
+                    isSaw: true // Flag de serra
+                });
+            } else {
+                const blockHeight = Math.random() * 80 + 40;
+                pipes.push({
+                    x: canvas.width,
+                    y: groundY - blockHeight,
+                    width: pipeWidth,
+                    height: blockHeight,
+                    passed: false,
+                    isGeometryBlock: true
+                });
+            }
+        }
+        // Se o tempo acabou e o portal ainda não foi criado, cria o portal
+        else if (gameProps.geometryTimer <= 0 && !gameProps.geometryPortalSpawned) {
+            const groundY = canvas.height - 50;
+            const portalSize = 120;
+            pipes.push({
+                x: canvas.width + 100, // Spawna um pouco fora da tela
+                y: groundY - portalSize + 20, // Toca o chão
+                width: portalSize,
+                height: portalSize,
+                isPortal: true
+            });
+            gameProps.geometryPortalSpawned = true;
+        }
+    } else { // --- LÓGICA DE SPAWN NORMAL ---
+
     if (gameProps.frames % spawnRate === 0) {
         let topHeight = Math.random() * (canvas.height - pipeGap - 100) + 50;
         
@@ -56,18 +188,63 @@ export function updatePipes(bird, onCollision) {
             }
         }
     }
+    }
 
     for (let i = 0; i < pipes.length; i++) {
         let p = pipes[i];
         const speedMultiplier = gameProps.isSlowMoActive ? 0.5 : 1;
         p.x -= gameProps.gameSpeed * speedMultiplier;
 
-        // Colisão com canos fixos
-        if (!p.destroyed &&
-            bird.x < p.x + pipeWidth &&
-            bird.x + bird.width > p.x &&
-            (bird.y < p.top || bird.y + bird.height > canvas.height - p.bottom)
-        ) {
+        // Lógica de colisão
+        let collided = false;
+        
+        if (p.isPortal) {
+            // Colisão com o Portal (Entrada)
+            const dx = (bird.x + bird.width/2) - (p.x + p.width/2);
+            const dy = (bird.y + bird.height/2) - (p.y + p.height/2);
+            const distance = Math.sqrt(dx*dx + dy*dy);
+            if (distance < p.width/3) { // Hitbox no centro do portal
+                finishGeometryMode();
+            }
+        } else if (p.isSaw) {
+            // Colisão com Serra (Circular simples)
+            const dx = (bird.x + bird.width/2) - (p.x + p.width/2);
+            const dy = (bird.y + bird.height/2) - (p.y + p.height/2);
+            const distance = Math.sqrt(dx*dx + dy*dy);
+            // Hitbox um pouco menor que o visual para ser justo
+            if (distance < (p.width/2) + (bird.width/2) - 5) collided = true;
+        } else if (p.isGeometryBlock) {
+            // Verifica se há sobreposição horizontal (está na mesma coluna do bloco)
+            if (bird.x + bird.width > p.x && bird.x < p.x + p.width) {
+                
+                // Lógica de Plataforma:
+                // Se o pé do pássaro está próximo ao topo do bloco E ele está caindo (velocity >= 0)
+                if (bird.y + bird.height >= p.y && bird.y + bird.height <= p.y + 25 && bird.velocity >= 0) {
+                    // Pousou com sucesso
+                    if (!bird.wasGrounded) {
+                        createParticles(bird.x + bird.width/2, bird.y + bird.height, '#00FF00', 8);
+                    }
+                    
+                    bird.isGrounded = true;
+                    bird.velocity = 0;
+                    bird.y = p.y - bird.height; // Corrige a posição para ficar exatamente em cima
+                    // Encaixa a rotação ao pousar no bloco
+                    bird.rotation = Math.round(bird.rotation / (Math.PI / 2)) * (Math.PI / 2);
+                } 
+                // Se não pousou no topo, mas está tocando no bloco (lado ou dentro), é colisão
+                else if (bird.y + bird.height > p.y + 10) {
+                    collided = true;
+                }
+            }
+        } else {
+            // Colisão com canos normais
+            if (!p.destroyed && bird.x < p.x + pipeWidth && bird.x + bird.width > p.x &&
+                (bird.y < p.top || bird.y + bird.height > canvas.height - p.bottom)) {
+                collided = true;
+            }
+        }
+
+        if (collided) {
             if (gameProps.isFuryActive) {
                 p.destroyed = true;
                 playExplosion();
@@ -80,7 +257,7 @@ export function updatePipes(bird, onCollision) {
         }
 
         // Pontuação
-        if (p.x + pipeWidth < bird.x && !p.passed) {
+        if (p.x + (p.width || pipeWidth) < bird.x && !p.passed) {
             gameProps.score++;
             try {
                 playScore();
@@ -102,7 +279,7 @@ export function updatePipes(bird, onCollision) {
         }
 
         // Remover canos que saíram da tela
-        if (p.x + pipeWidth < 0) {
+        if (p.x + (p.width || pipeWidth) < 0) {
             pipes.shift();
             i--;
         }

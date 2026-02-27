@@ -1,25 +1,33 @@
 import { ctx, canvas, gameProps } from './state.js';
-import { saveTotalCoins } from './storage.js';
+import { saveTotalCoins, getTotalCoins } from './storage.js';
 
 const MISSION_TYPES = [
-    { id: 'score', text: 'Alcance a pontuação de', value: [20, 30, 50] },
-    { id: 'coins', text: 'Colete', value: [10, 20, 30], suffix: 'moedas' },
-    { id: 'survive_lightning', text: 'Sobreviva a', value: [1, 2, 3], suffix: 'raios' },
-    { id: 'use_magnet', text: 'Use o Ímã', value: [1, 3, 5], suffix: 'vezes' },
-    { id: 'use_slowmo', text: 'Use o Slow-Mo', value: [1, 3, 5], suffix: 'vezes' },
-    { id: 'play_hardcore', text: 'Jogue partidas Hardcore', value: [1, 3], suffix: 'vezes' },
-    { id: 'buy_item', text: 'Compre itens na loja', value: [1, 2], suffix: 'vezes' },
+    { id: 'score', text: 'Alcance a pontuação de', value: [20, 8, 30], icon: '🏆' },
+    { id: 'coins', text: 'Colete', value: [10, 20, 30], suffix: 'moedas', icon: '💰' },
+    { id: 'survive_lightning', text: 'Sobreviva a', value: [1, 2, 3], suffix: 'raios', icon: '⚡' },
+    { id: 'use_magnet', text: 'Use o Ímã', value: [1, 3, 5], suffix: 'vezes', icon: '🧲' },
+    { id: 'use_slowmo', text: 'Use o Slow-Mo', value: [1, 3, 5], suffix: 'vezes', icon: '⏰' },
+    { id: 'play_hardcore', text: 'Jogue partidas Hardcore', value: [1, 3], suffix: 'vezes', icon: '🔥' },
+    { id: 'buy_item', text: 'Compre itens na loja', value: [1, 2], suffix: 'vezes', icon: '🛒' },
+    { id: 'play_boss', text: 'Jogue o modo Boss', value: [1, 3], suffix: 'vezes', icon: '👹' },
+    { id: 'defeat_boss', text: 'Derrote o Boss', value: [1], suffix: 'vez', icon: '⚔️' },
+    { id: 'use_shield', text: 'Use o Escudo', value: [3, 5, 10], suffix: 'vezes', icon: '🛡️' },
+    { id: 'survive_time', text: 'Sobreviva por', value: [30, 60, 90], suffix: 'segundos', icon: '⏳' },
 ];
 
 const REWARDS = [50, 75, 100];
 
 let dailyMissions = [];
+let scrollY = 0;
+const CARD_HEIGHT = 100;
+const CARD_GAP = 20;
 
 function generateMissions() {
     const missions = [];
     const usedTypes = new Set();
 
-    while (missions.length < 3) {
+    // Gera até 10 missões ou até esgotar os tipos disponíveis
+    while (missions.length < 10 && usedTypes.size < MISSION_TYPES.length) {
         const type = MISSION_TYPES[Math.floor(Math.random() * MISSION_TYPES.length)];
         if (!usedTypes.has(type.id)) {
             usedTypes.add(type.id);
@@ -29,6 +37,7 @@ function generateMissions() {
                 id: `${type.id}_${value}`,
                 text: `${type.text} ${value} ${type.suffix || ''}`.trim(),
                 type: type.id,
+                icon: type.icon,
                 target: value,
                 progress: 0,
                 reward: reward,
@@ -37,6 +46,21 @@ function generateMissions() {
             });
         }
     }
+
+    // Adiciona a Missão Secreta (sempre a última)
+    missions.push({
+        id: 'secret_challenge',
+        text: 'Alcance 100 pontos em uma partida', // O texto real
+        type: 'secret_score',
+        icon: '🕵️',
+        target: 100,
+        progress: 0,
+        reward: 500, // Recompensa alta
+        completed: false,
+        claimed: false,
+        isSecret: true
+    });
+
     return missions;
 }
 
@@ -52,6 +76,20 @@ export function loadMissions() {
         localStorage.setItem('morcegoFlap_missions', JSON.stringify(dailyMissions));
         localStorage.setItem('morcegoFlap_missionDate', today);
     }
+}
+
+// Função para atualizar missões que ocorrem fora do loop de jogo (ex: Loja)
+export function incrementMissionProgress(type, amount = 1) {
+    let updated = false;
+    dailyMissions.forEach(mission => {
+        if (!mission.completed && mission.type === type) {
+            mission.progress += amount;
+            if (mission.progress >= mission.target) mission.completed = true;
+            updated = true;
+        }
+    });
+    
+    if (updated) localStorage.setItem('morcegoFlap_missions', JSON.stringify(dailyMissions));
 }
 
 export function updateMissionProgress() {
@@ -90,6 +128,9 @@ export function updateMissionProgress() {
                     case 'survive_time':
                         mission.progress = Math.max(mission.progress, Math.floor(gameProps.frames / 60));
                         break;
+                    case 'secret_score':
+                        mission.progress = Math.max(mission.progress, gameProps.score);
+                        break;
                     // 'buy_item' seria atualizado na loja
                 }
                 if (mission.progress >= mission.target) {
@@ -101,46 +142,154 @@ export function updateMissionProgress() {
     }
 }
 
+export function handleMissionScroll(e) {
+    scrollY += e.deltaY * 0.5;
+    const totalHeight = dailyMissions.length * (CARD_HEIGHT + CARD_GAP) + 20; // Altura total do conteúdo
+    const viewHeight = canvas.height - 180; // Altura da área visível
+    const maxScroll = Math.max(0, totalHeight - viewHeight);
+    
+    if (scrollY < 0) scrollY = 0;
+    if (scrollY > maxScroll) scrollY = maxScroll;
+}
+
 export function drawMissionMap() {
+    // Fundo com gradiente escuro
+    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    gradient.addColorStop(0, '#1a1a1a');
+    gradient.addColorStop(1, '#000000');
     ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = gradient;
+    ctx.globalAlpha = 0.95;
+    ctx.fillRect(20, 20, canvas.width - 40, canvas.height - 40);
+    ctx.globalAlpha = 1.0;
+    
+    // Borda do painel
+    ctx.strokeStyle = '#444';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
 
+    // Título
     ctx.fillStyle = '#FFD700';
-    ctx.font = "bold 30px Arial";
+    ctx.font = "bold 32px Arial";
     ctx.textAlign = "center";
-    ctx.fillText("Missões Diárias", canvas.width / 2, 80);
+    ctx.fillText("MISSÕES DIÁRIAS", canvas.width / 2, 80);
+    
+    // Subtítulo
+    ctx.fillStyle = '#AAA';
+    ctx.font = "16px Arial";
+    ctx.fillText("Complete para ganhar moedas!", canvas.width / 2, 110);
+
+    // Área de conteúdo com Clip para Scroll
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(20, 130, canvas.width - 40, canvas.height - 180);
+    ctx.clip();
+    ctx.translate(0, -scrollY);
+
+    // Conta quantas missões normais foram completadas
+    const completedNormalMissions = dailyMissions.filter(m => !m.isSecret && m.completed).length;
 
     dailyMissions.forEach((mission, index) => {
-        const y = 150 + index * 100;
-        ctx.fillStyle = mission.completed ? '#004d00' : '#333';
-        ctx.fillRect(50, y, canvas.width - 100, 80);
-        ctx.strokeStyle = mission.completed ? '#00FF00' : '#888';
-        ctx.strokeRect(50, y, canvas.width - 100, 80);
+        const y = 140 + index * (CARD_HEIGHT + CARD_GAP);
+        const x = 40;
+        const w = canvas.width - 80;
 
+        // Fundo do Card
+        ctx.fillStyle = mission.completed ? (mission.claimed ? '#222' : '#1a3300') : '#333';
+        ctx.fillRect(x, y, w, CARD_HEIGHT);
+        
+        // Borda do Card
+        ctx.strokeStyle = mission.completed ? (mission.claimed ? '#444' : '#00FF00') : '#555';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x, y, w, CARD_HEIGHT);
+
+        // Lógica de Segredo
+        let displayIcon = mission.icon;
+        let displayText = mission.text;
+        let isLockedSecret = false;
+
+        if (mission.isSecret && completedNormalMissions < 5) {
+            isLockedSecret = true;
+            displayIcon = '🔒';
+            displayText = '??? (Complete 5 missões para revelar)';
+        }
+
+        // Ícone
+        ctx.font = "30px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText(displayIcon || '🎯', x + 30, y + 45);
+
+        // Texto da Missão
         ctx.fillStyle = '#FFF';
-        ctx.font = "18px Arial";
+        ctx.font = "bold 16px Arial";
         ctx.textAlign = "left";
-        ctx.fillText(mission.text, 70, y + 30);
+        ctx.fillText(displayText, x + 60, y + 30);
 
-        ctx.font = "16px Arial";
-        if (mission.completed && !mission.claimed) {
+        // Barra de Progresso
+        const barWidth = w - 70;
+        const barHeight = 10;
+        const barX = x + 60;
+        const barY = y + 45;
+        
+        let progressPercent = Math.min(1, mission.progress / mission.target);
+        if (isLockedSecret) {
+            progressPercent = 0; // Esconde o progresso se estiver bloqueada
+        }
+
+        ctx.fillStyle = '#111';
+        ctx.fillRect(barX, barY, barWidth, barHeight); // Fundo da barra
+        ctx.fillStyle = mission.completed ? '#00FF00' : '#00BFFF';
+        ctx.fillRect(barX, barY, barWidth * progressPercent, barHeight); // Preenchimento
+
+        // Texto de Status / Botão
+        ctx.font = "14px Arial";
+        if (isLockedSecret) {
+            ctx.fillStyle = '#AAA';
+            ctx.fillText(`Progresso Oculto`, x + 60, y + 80);
+        } else if (mission.completed && !mission.claimed) {
+            // Botão de Resgatar
             ctx.fillStyle = '#FFD700';
-            ctx.fillText(`Recompensa: ${mission.reward} 💰 (Clique para coletar)`, 70, y + 60);
+            ctx.fillText(`✨ CLIQUE PARA RESGATAR (+${mission.reward} 💰)`, x + 60, y + 80);
         } else if (mission.claimed) {
             ctx.fillStyle = '#888';
-            ctx.fillText('Coletado', 70, y + 60);
+            ctx.fillText('✅ Recompensa Coletada', x + 60, y + 80);
         } else {
-            ctx.fillStyle = '#AAA';
-            ctx.fillText(`Progresso: ${mission.progress}/${mission.target}`, 70, y + 60);
+            ctx.fillStyle = '#CCC';
+            ctx.fillText(`Progresso: ${Math.floor(mission.progress)}/${mission.target} (+${mission.reward} 💰)`, x + 60, y + 80);
         }
     });
+
+    ctx.restore();
+
+    // Barra de Scroll
+    const totalHeight = dailyMissions.length * (CARD_HEIGHT + CARD_GAP) + 20;
+    const viewHeight = canvas.height - 180;
+    if (totalHeight > viewHeight) {
+        const scrollbarHeight = viewHeight;
+        const thumbHeight = scrollbarHeight * (viewHeight / totalHeight);
+        const thumbY = (scrollY / (totalHeight - viewHeight)) * (scrollbarHeight - thumbHeight);
+        
+        ctx.fillStyle = '#555';
+        ctx.fillRect(canvas.width - 15, 130, 10, scrollbarHeight);
+        ctx.fillStyle = '#888';
+        ctx.fillRect(canvas.width - 15, 130 + thumbY, 10, thumbHeight);
+    }
+
+    // Botão Voltar (Instrução)
+    ctx.fillStyle = '#FFF';
+    ctx.font = "16px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText("Clique nas bordas para voltar", canvas.width / 2, canvas.height - 20);
 }
 
 export function handleMissionClick(x, y) {
+    const adjustedY = y + scrollY;
     dailyMissions.forEach((mission, index) => {
-        const rect = { x: 50, y: 150 + index * 100, w: canvas.width - 100, h: 80 };
+        const rect = { x: 40, y: 140 + index * (CARD_HEIGHT + CARD_GAP), w: canvas.width - 80, h: CARD_HEIGHT };
+        
         if (mission.completed && !mission.claimed &&
-            x > rect.x && x < rect.x + rect.w && y > rect.y && y < rect.y + rect.h) {
+            x > rect.x && x < rect.x + rect.w && adjustedY > rect.y && adjustedY < rect.y + rect.h) {
             
             mission.claimed = true;
             saveTotalCoins(mission.reward);
@@ -148,4 +297,9 @@ export function handleMissionClick(x, y) {
             localStorage.setItem('morcegoFlap_missions', JSON.stringify(dailyMissions));
         }
     });
+
+    // Fechar ao clicar fora da área da lista (cabeçalho ou rodapé)
+    if (y < 130 || y > canvas.height - 50) {
+        gameProps.isMissionMapOpen = false;
+    }
 }

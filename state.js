@@ -49,7 +49,11 @@ export const gameProps = {
     furyCharge: 0,
     isFuryActive: false,
     furyTimer: 0,
-    shockwaves: []
+    shockwaves: [],
+    isGeometryMode: false,
+    geometryTimer: 0,
+    isGeometryCutscene: false,
+    pulseScale: 1.0
 };
 
 export function resetGameProps() {
@@ -88,5 +92,12 @@ export function resetGameProps() {
     gameProps.isFuryActive = false;
     gameProps.furyTimer = 0;
     gameProps.shockwaves = [];
+    gameProps.isGeometryMode = false;
+    gameProps.geometryTimer = 0;
+    gameProps.isGeometryCutscene = false;
+    gameProps.geometryPortalSpawned = false;
+    gameProps.transitionFlash = 0; // 0 a 1 (opacidade do flash branco)
+    gameProps.rgbSplitTimer = 0; // Timer para o efeito de distorção
+    gameProps.pulseScale = 1.0;
     // isBossMode é definido no menu, não reseta aqui para false
 }
