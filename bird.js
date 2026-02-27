@@ -43,10 +43,38 @@ export const bird = {
             ctx.stroke();
         }
 
+        // Desenha o escudo de reflexão
+        if (gameProps.isPlayerShieldActive) {
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.lineWidth = 4;
+            ctx.shadowColor = '#FFFFFF';
+            ctx.shadowBlur = 15;
+            ctx.beginPath();
+            ctx.arc(0, 0, 45, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+        }
 
+        // Efeito de Fúria
+        if (gameProps.isFuryActive) {
+            ctx.strokeStyle = '#FF4500'; // Laranja avermelhado
+            ctx.lineWidth = 4;
+            ctx.shadowColor = '#FF4500';
+            ctx.shadowBlur = 20;
+            ctx.beginPath();
+            ctx.arc(0, 0, 40 + Math.random() * 5, 0, Math.PI * 2); // Efeito pulsante
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+        }
 
         const currentSkin = SKINS.find(s => s.id === gameProps.shopData.equippedSkin) || SKINS[0];
         const birdColor = currentSkin.color;
+
+        // Efeito Neon
+        if (currentSkin.glow) {
+            ctx.shadowColor = currentSkin.color;
+            ctx.shadowBlur = 20;
+        }
 
         // Desenhar Corpo (Roxo Escuro)
         ctx.fillStyle = birdColor;
@@ -85,9 +113,16 @@ export const bird = {
         ctx.fill();
 
         ctx.restore();
+        ctx.shadowBlur = 0; // Resetar shadow
     },
     
     update: function(onCollision) {
+        if (gameProps.isFrozen) {
+            // Player is frozen, no movement
+            this.velocity = 0;
+            return;
+        }
+
         this.velocity += this.gravity;
         this.y += this.velocity;
 
@@ -130,6 +165,7 @@ export const bird = {
     },
     
     jumpAction: function() {
+        if (gameProps.isFrozen) return;
         this.velocity = -this.jump;
         playJump();
     }

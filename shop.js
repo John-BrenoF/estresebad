@@ -8,6 +8,9 @@ const shopItems = [];
 const cardButton = {};
 const exitButton = {};
 const slowMoButton = {};
+let scrollY = 0;
+const itemHeight = 80;
+const totalContentHeight = (SKINS.length + 2) * itemHeight;
 
 function setupShopLayout() {
     shopItems.length = 0;
@@ -16,15 +19,15 @@ function setupShopLayout() {
             ...skin,
             rect: {
                 x: 50,
-                y: 150 + index * 80,
+                y: 150 + index * itemHeight,
                 w: canvas.width - 100,
                 h: 70
             }
         });
     });
 
-    cardButton.rect = { x: 50, y: 150 + SKINS.length * 80, w: canvas.width - 100, h: 70 };
-    slowMoButton.rect = { x: 50, y: 150 + (SKINS.length + 1) * 80, w: canvas.width - 100, h: 70 };
+    cardButton.rect = { x: 50, y: 150 + SKINS.length * itemHeight, w: canvas.width - 100, h: 70 };
+    slowMoButton.rect = { x: 50, y: 150 + (SKINS.length + 1) * itemHeight, w: canvas.width - 100, h: 70 };
     exitButton.rect = { x: canvas.width / 2 - 75, y: canvas.height - 120, w: 150, h: 50 };
 }
 
@@ -45,15 +48,21 @@ export function drawShop() {
     ctx.font = "24px Arial";
     ctx.fillText(`💰 ${gameProps.totalCoins}`, canvas.width / 2, 120);
 
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, 140, canvas.width, canvas.height - 280);
+    ctx.clip();
+    ctx.translate(0, -scrollY);
+
     // Itens (Skins)
     shopItems.forEach(item => {
         const isOwned = gameProps.shopData.purchasedSkins.includes(item.id);
         const isEquipped = gameProps.shopData.equippedSkin === item.id;
 
         ctx.fillStyle = isEquipped ? '#004466' : '#333';
-        ctx.fillRect(item.rect.x, item.rect.y, item.rect.w, item.rect.h);
+        ctx.fillRect(item.rect.x, item.rect.y, item.rect.w - 20, item.rect.h);
         ctx.strokeStyle = isEquipped ? '#00BFFF' : '#888';
-        ctx.strokeRect(item.rect.x, item.rect.y, item.rect.w, item.rect.h);
+        ctx.strokeRect(item.rect.x, item.rect.y, item.rect.w - 20, item.rect.h);
 
         ctx.fillStyle = item.color;
         ctx.beginPath();
@@ -77,9 +86,9 @@ export function drawShop() {
 
     // Botão de Comprar Carta
     ctx.fillStyle = '#333';
-    ctx.fillRect(cardButton.rect.x, cardButton.rect.y, cardButton.rect.w, cardButton.rect.h);
+    ctx.fillRect(cardButton.rect.x, cardButton.rect.y, cardButton.rect.w - 20, cardButton.rect.h);
     ctx.strokeStyle = '#888';
-    ctx.strokeRect(cardButton.rect.x, cardButton.rect.y, cardButton.rect.w, cardButton.rect.h);
+    ctx.strokeRect(cardButton.rect.x, cardButton.rect.y, cardButton.rect.w - 20, cardButton.rect.h);
     ctx.fillStyle = '#FFF';
     ctx.textAlign = "left";
     ctx.font = "20px Arial";
@@ -90,9 +99,9 @@ export function drawShop() {
 
     // Botão de Comprar Slow-Mo
     ctx.fillStyle = '#333';
-    ctx.fillRect(slowMoButton.rect.x, slowMoButton.rect.y, slowMoButton.rect.w, slowMoButton.rect.h);
+    ctx.fillRect(slowMoButton.rect.x, slowMoButton.rect.y, slowMoButton.rect.w - 20, slowMoButton.rect.h);
     ctx.strokeStyle = '#888';
-    ctx.strokeRect(slowMoButton.rect.x, slowMoButton.rect.y, slowMoButton.rect.w, slowMoButton.rect.h);
+    ctx.strokeRect(slowMoButton.rect.x, slowMoButton.rect.y, slowMoButton.rect.w - 20, slowMoButton.rect.h);
     ctx.fillStyle = '#FFF';
     ctx.textAlign = "left";
     ctx.font = "20px Arial";
@@ -100,6 +109,17 @@ export function drawShop() {
     ctx.fillStyle = gameProps.totalCoins >= SLOWMO_PRICE ? '#FFD700' : '#FF6B6B';
     ctx.font = "16px Arial";
     ctx.fillText(`Comprar 1 por: ${SLOWMO_PRICE} 💰`, slowMoButton.rect.x + 20, slowMoButton.rect.y + 55);
+
+    ctx.restore();
+
+    // Barra de Scroll
+    const scrollbarHeight = (canvas.height - 280);
+    const thumbHeight = scrollbarHeight * (scrollbarHeight / totalContentHeight);
+    const thumbY = (scrollY / (totalContentHeight - scrollbarHeight)) * (scrollbarHeight - thumbHeight);
+    ctx.fillStyle = '#555';
+    ctx.fillRect(canvas.width - 15, 140, 10, scrollbarHeight);
+    ctx.fillStyle = '#888';
+    ctx.fillRect(canvas.width - 15, 140 + thumbY, 10, thumbHeight);
 
     // Botão de Sair
     ctx.fillStyle = '#AA0000';
@@ -111,6 +131,8 @@ export function drawShop() {
 }
 
 export function handleShopClick(x, y) {
+    const adjustedY = y + scrollY;
+
     // Clicou em Sair
     if (x > exitButton.rect.x && x < exitButton.rect.x + exitButton.rect.w && y > exitButton.rect.y && y < exitButton.rect.y + exitButton.rect.h) {
         gameProps.isShopOpen = false;
@@ -118,7 +140,7 @@ export function handleShopClick(x, y) {
     }
 
     // Clicou em Comprar Carta
-    if (x > cardButton.rect.x && x < cardButton.rect.x + cardButton.rect.w && y > cardButton.rect.y && y < cardButton.rect.y + cardButton.rect.h) {
+    if (x > cardButton.rect.x && x < cardButton.rect.x + cardButton.rect.w && adjustedY > cardButton.rect.y && adjustedY < cardButton.rect.y + cardButton.rect.h) {
         if (gameProps.totalCoins >= CARD_PRICE) {
             gameProps.totalCoins -= CARD_PRICE;
             gameProps.shopData.immunityCards++;
@@ -129,7 +151,7 @@ export function handleShopClick(x, y) {
     }
 
     // Clicou em Comprar Slow-Mo
-    if (x > slowMoButton.rect.x && x < slowMoButton.rect.x + slowMoButton.rect.w && y > slowMoButton.rect.y && y < slowMoButton.rect.y + slowMoButton.rect.h) {
+    if (x > slowMoButton.rect.x && x < slowMoButton.rect.x + slowMoButton.rect.w && adjustedY > slowMoButton.rect.y && adjustedY < slowMoButton.rect.y + slowMoButton.rect.h) {
         if (gameProps.totalCoins >= SLOWMO_PRICE) {
             gameProps.totalCoins -= SLOWMO_PRICE;
             gameProps.shopData.slowMoCharges++;
@@ -141,7 +163,7 @@ export function handleShopClick(x, y) {
 
     // Clicou em um item de Skin
     shopItems.forEach(item => {
-        if (x > item.rect.x && x < item.rect.x + item.rect.w && y > item.rect.y && y < item.rect.y + item.rect.h) {
+        if (x > item.rect.x && x < item.rect.x + item.rect.w && adjustedY > item.rect.y && adjustedY < item.rect.y + item.rect.h) {
             const isOwned = gameProps.shopData.purchasedSkins.includes(item.id);
             if (isOwned) {
                 // Equipar
@@ -159,4 +181,11 @@ export function handleShopClick(x, y) {
             }
         }
     });
+}
+
+export function handleShopScroll(event) {
+    scrollY += event.deltaY * 0.5;
+    const maxScroll = totalContentHeight - (canvas.height - 280);
+    if (scrollY < 0) scrollY = 0;
+    if (scrollY > maxScroll) scrollY = maxScroll;
 }

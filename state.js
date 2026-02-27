@@ -35,7 +35,21 @@ export const gameProps = {
     magnetCooldownTimer: 0,
     isSlowMoActive: false,
     slowMoTimer: 0,
-    slowMoCooldownTimer: 0
+    slowMoCooldownTimer: 0,
+    isHardcoreMode: false,
+    isMissionMapOpen: false,
+    isBossMode: false,
+    playerAttackCooldown: 0,
+    isPlayerShieldActive: false,
+    playerShieldCooldown: 0,
+    isFrozen: false,
+    freezeTimer: 0,
+    shieldUsageCount: 0,
+    didDefeatBoss: false,
+    furyCharge: 0,
+    isFuryActive: false,
+    furyTimer: 0,
+    shockwaves: []
 };
 
 export function resetGameProps() {
@@ -62,4 +76,17 @@ export function resetGameProps() {
     // O cooldown do ímã e slowmo não resetam
     gameProps.isSlowMoActive = false;
     gameProps.slowMoTimer = 0;
+    gameProps.isMissionMapOpen = false;
+    gameProps.playerAttackCooldown = 0;
+    gameProps.isPlayerShieldActive = false;
+    gameProps.playerShieldCooldown = 0;
+    gameProps.isFrozen = false;
+    gameProps.freezeTimer = 0;
+    gameProps.shieldUsageCount = 0;
+    gameProps.didDefeatBoss = false;
+    gameProps.furyCharge = 0;
+    gameProps.isFuryActive = false;
+    gameProps.furyTimer = 0;
+    gameProps.shockwaves = [];
+    // isBossMode é definido no menu, não reseta aqui para false
 }

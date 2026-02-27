@@ -1,4 +1,5 @@
 import { ctx, canvas, gameProps } from './state.js';
+import { playGhost } from './audio.js';
 
 const ghosts = [];
 
@@ -49,7 +50,9 @@ class Ghost {
 
 export function updateGhosts(bird, onCollision) {
     // 15.3% chance to spawn a ghost every ~4 seconds (240 frames)
-    if (ghosts.length === 0 && gameProps.frames % 240 === 0 && Math.random() < 0.153) {
+    const chance = gameProps.isHardcoreMode ? 0.3 : 0.153;
+    if (ghosts.length === 0 && gameProps.frames > 100 && gameProps.frames % 180 === 0 && Math.random() < chance) {
+        playGhost();
         ghosts.push(new Ghost());
     }
 

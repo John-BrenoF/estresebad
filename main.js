@@ -1,30 +1,39 @@
 import { canvas, ctx, gameProps, resetGameProps } from './state.js';
 import { DELAY_TIMES } from './constants.js';
-import { checkHighScore, saveHighScore, saveTotalCoins, saveShopData } from './storage.js';
+import { checkHighScore, saveHighScore, saveTotalCoins, saveShopData, getShopData, getTotalCoins } from './storage.js';
 import { bird } from './bird.js';
 import { pipes, updatePipes, drawPipes } from './pipes.js';
 import { initMovingTube, updateMovingTube, drawMovingTube } from './movingTube.js';
-import { drawScore, drawWaitingScreen, drawGameOverScreen, drawStartScreen, handleMenuClick } from './ui.js';
-import { playDie, playShield, playSlowMo } from './audio.js';
+import { drawScore, drawWaitingScreen, drawGameOverScreen, drawStartScreen, handleMenuClick, attackButtonRect, shieldButtonRect, furyButtonRect } from './ui.js';
+import { playDie, playShield, playSlowMo, playBossMusic, stopBossMusic, playPlayerAttack, playBossDefeated, playPlayerShield } from './audio.js';
 import { createParticles, updateAndDrawParticles, clearParticles } from './particles.js';
 import { initBackground, updateAndDrawBackground } from './background.js';
 import { updateLightning, drawLightning, resetLightning } from './lightning.js';
 import { resetRain, updateAndDrawRain } from './rain.js';
 import { updateAndDrawCoins, clearCoins } from './coins.js';
-import { drawShop, handleShopClick } from './shop.js';
+import { drawShop, handleShopClick, handleShopScroll } from './shop.js';
 import { updateGhosts, drawGhosts, resetGhosts } from './ghost.js';
+import { checkAchievements, drawAchievements, loadAchievements } from './achievements.js';
+import { loadMissions, updateMissionProgress, drawMissionMap, handleMissionClick } from './missions.js';
+import { initBoss, updateBoss, drawBoss, boss } from './boss.js';
+
+let screenShake = { intensity: 0, duration: 0 };
 
 function gameOver() {
     gameProps.isGameOver = true;
     gameProps.lastDeathTime = Date.now();
     playDie();
+    triggerScreenShake(10, 20);
     createParticles(bird.x + bird.width / 2, bird.y + bird.height / 2, '#FF4444', 40);
     saveTotalCoins(gameProps.currentCoins);
+    stopBossMusic();
     
     if (checkHighScore(gameProps.score)) {
         gameProps.isNewHighScore = true;
         saveHighScore(gameProps.score);
     }
+
+    updateMissionProgress();
 }
 
 function startWaitingPeriod() {
@@ -34,6 +43,10 @@ function startWaitingPeriod() {
     const randomIndex = Math.floor(Math.random() * DELAY_TIMES.length);
     gameProps.selectedDelay = DELAY_TIMES[randomIndex];
     gameProps.waitStartTime = Date.now();
+    
+    if (gameProps.isBossMode) {
+        playBossMusic();
+    }
     
     waitLoop();
 }
@@ -65,11 +78,20 @@ function resetGame() {
     resetLightning();
     resetRain();
     resetGhosts();
+    if (gameProps.isBossMode) initBoss();
     
     loop();
 }
 
 function loop() {
+    ctx.save();
+    if (screenShake.duration > 0) {
+        const dx = (Math.random() - 0.5) * screenShake.intensity;
+        const dy = (Math.random() - 0.5) * screenShake.intensity;
+        ctx.translate(dx, dy);
+        screenShake.duration--;
+    }
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // 1. Desenha o fundo (Paralaxe) antes de tudo
@@ -85,6 +107,13 @@ function loop() {
         return;
     }
 
+    // Se o mapa de missões estiver aberto
+    if (gameProps.isMissionMapOpen) {
+        drawMissionMap();
+        requestAnimationFrame(loop);
+        return;
+    }
+
     // Se estiver no menu, desenha o menu e retorna
     if (gameProps.isInMenu) {
         drawStartScreen();
@@ -96,6 +125,25 @@ function loop() {
 
     // Atualiza lógica apenas se não for Game Over
     if (!gameProps.isGameOver) {
+        // Player attack cooldown
+        if (gameProps.playerAttackCooldown > 0) gameProps.playerAttackCooldown--;
+        if (gameProps.playerShieldCooldown > 0) {
+            gameProps.playerShieldCooldown--;
+        }
+        if (gameProps.playerShieldCooldown < (1.1 * 60) - 10) gameProps.isPlayerShieldActive = false; // Shield stays active for 10 frames
+        if (gameProps.freezeTimer > 0) {
+            gameProps.freezeTimer--;
+            if (gameProps.freezeTimer <= 0) gameProps.isFrozen = false;
+        }
+
+        // Atualiza Fúria
+        if (gameProps.isFuryActive) {
+            gameProps.furyTimer--;
+            if (gameProps.furyTimer <= 0) {
+                gameProps.isFuryActive = false;
+            }
+        }
+
         // Atualiza timers do ímã
         if (gameProps.magnetCooldownTimer > 0) gameProps.magnetCooldownTimer--;
         if (gameProps.magnetTimer > 0) {
@@ -124,13 +172,21 @@ function loop() {
         }
 
         const currentSpeedMultiplier = gameProps.isSlowMoActive ? 0.5 : 1;
-        gameProps.gameSpeed += gameProps.difficultyMultiplier * currentSpeedMultiplier;
+        const hardcoreMultiplier = gameProps.isHardcoreMode ? 1.5 : 1;
+        gameProps.gameSpeed += gameProps.difficultyMultiplier * currentSpeedMultiplier * hardcoreMultiplier;
         bird.update(gameOver);
-        updatePipes(bird, gameOver);
-        updateMovingTube(bird, gameOver);
-        updateLightning(bird, gameOver);
-        updateGhosts(bird, gameOver);
+
+        if (gameProps.isBossMode) {
+            updateBoss(bird, gameOver);
+        } else {
+            updatePipes(bird, gameOver);
+            updateMovingTube(bird, gameOver);
+            updateLightning(bird, gameOver);
+            updateGhosts(bird, gameOver);
+        }
+        
         updateAndDrawCoins(bird);
+        checkAchievements();
         gameProps.frames++;
     } else {
         // Se for Game Over, desenhamos os elementos estáticos para não sumirem
@@ -139,19 +195,63 @@ function loop() {
 
     // Desenha sempre
     bird.draw();
-    drawPipes();
+    
+    if (gameProps.isBossMode) {
+        drawBoss();
+    } else {
+        drawPipes();
+        drawLightning();
+        drawGhosts();
+    }
+    
     if (gameProps.isGameOver) updateAndDrawCoins(bird); // Desenha moedas paradas no game over
     updateAndDrawParticles();
-    drawLightning();
-    drawGhosts();
+
+    // Desenhar Ondas de Choque
+    ctx.save();
+    ctx.lineWidth = 6;
+    for (let i = 0; i < gameProps.shockwaves.length; i++) {
+        let sw = gameProps.shockwaves[i];
+        sw.radius += sw.speed;
+        sw.alpha -= 0.05;
+
+        if (sw.alpha <= 0) {
+            gameProps.shockwaves.splice(i, 1);
+            i--;
+            continue;
+        }
+
+        ctx.beginPath();
+        ctx.arc(sw.x, sw.y, sw.radius, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(255, 255, 255, ${sw.alpha})`;
+        ctx.stroke();
+    }
+    ctx.restore();
     
+    drawAchievements();
     drawScore();
 
     if (gameProps.isGameOver) {
         drawGameOverScreen();
     }
 
+    ctx.restore();
     requestAnimationFrame(loop);
+}
+
+export function triggerScreenShake(intensity, duration) {
+    screenShake.intensity = intensity;
+    screenShake.duration = duration;
+}
+
+export function triggerShockwave(x, y) {
+    gameProps.shockwaves.push({
+        x: x,
+        y: y,
+        radius: 10,
+        alpha: 1.0,
+        speed: 15
+    });
 }
 
 function activateImmunityCard() {
@@ -185,6 +285,35 @@ function activateMagnet() {
     }
 }
 
+function activatePlayerShield() {
+    if (gameProps.playerShieldCooldown <= 0) {
+        gameProps.isPlayerShieldActive = true; // Ativa o escudo
+        gameProps.playerShieldCooldown = 1.1 * 60; // 1.1 segundos
+        gameProps.shieldUsageCount++;
+        playPlayerShield();
+    }
+}
+
+function activateFury() {
+    if (gameProps.furyCharge >= 5 && !gameProps.isFuryActive) {
+        gameProps.isFuryActive = true;
+        gameProps.furyCharge = 0;
+        gameProps.furyTimer = 2 * 60; // 2 segundos
+        // playFurySound(); // Opcional: adicionar som
+    }
+}
+
+function playerAttack() {
+    if (gameProps.isBossMode && gameProps.playerAttackCooldown <= 0) {
+        gameProps.playerAttackCooldown = 5 * 60; // 5 segundos
+        playPlayerAttack();
+        boss.projectiles.push({
+            x: bird.x + bird.width, y: bird.y + bird.height / 2,
+            vx: 8, vy: 0, size: 12, type: 'player_shot'
+        });
+    }
+}
+
 function handleInput(e) {
     if (gameProps.isShopOpen) {
         if (e.type === 'click') {
@@ -192,6 +321,20 @@ function handleInput(e) {
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
             handleShopClick(x, y);
+        }
+        // Adiciona o listener de scroll apenas quando a loja está aberta
+        if (e.type === 'wheel') {
+            handleShopScroll(e);
+        }
+        return;
+    }
+
+    if (gameProps.isMissionMapOpen) {
+        if (e.type === 'click') {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            handleMissionClick(x, y);
         }
         return;
     }
@@ -203,15 +346,67 @@ function handleInput(e) {
         const action = handleMenuClick(x, y);
         if (action === 'start') {
             gameProps.isInMenu = false;
+            gameProps.isHardcoreMode = false;
             startWaitingPeriod();
         } else if (action === 'shop') {
+            // Garante que os dados da loja e moedas estão carregados antes de abrir
+            if (!gameProps.shopData) gameProps.shopData = getShopData();
+            if (gameProps.totalCoins === 0) gameProps.totalCoins = getTotalCoins();
+
             gameProps.isShopOpen = true;
+        } else if (action === 'hardcore') {
+            gameProps.isInMenu = false;
+            gameProps.isHardcoreMode = true;
+            startWaitingPeriod();
+        } else if (action === 'boss') {
+            gameProps.isInMenu = false;
+            gameProps.isBossMode = true;
+            gameProps.isHardcoreMode = false;
+            startWaitingPeriod();
+        } else if (action === 'missions') {
+            gameProps.isMissionMapOpen = true;
         }
         return;
     }
 
+    // Botão de sair durante a partida
+    const exitButtonRect = { x: canvas.width - 40, y: canvas.height - 40, w: 30, h: 30 };
+    if (!gameProps.isGameOver && !gameProps.isInMenu && e.type === 'click') {
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        if (x > exitButtonRect.x && x < exitButtonRect.x + exitButtonRect.w && y > exitButtonRect.y && y < exitButtonRect.y + exitButtonRect.h) {
+            gameOver();
+            return;
+        }
+
+        // Botão de Ataque (Boss Mode)
+        if (gameProps.isBossMode) {
+            if (x > attackButtonRect.x && x < attackButtonRect.x + attackButtonRect.w && y > attackButtonRect.y && y < attackButtonRect.y + attackButtonRect.h) {
+                playerAttack();
+                return;
+            }
+            // Botão de Escudo
+            if (x > shieldButtonRect.x && x < shieldButtonRect.x + shieldButtonRect.w && y > shieldButtonRect.y && y < shieldButtonRect.y + shieldButtonRect.h) {
+                activatePlayerShield();
+                return;
+            }
+        } else {
+            // Botão de Fúria (Modo Normal/Hardcore)
+            if (x > furyButtonRect.x && x < furyButtonRect.x + furyButtonRect.w && y > furyButtonRect.y && y < furyButtonRect.y + furyButtonRect.h) {
+                activateFury();
+                return;
+            }
+        }
+        // Se não clicou em botões, permite o pulo (tap-to-jump)
+    }
+
     if (e.type === 'keydown' && e.code === 'KeyL' && (gameProps.isInMenu || gameProps.isGameOver)) {
         gameProps.isShopOpen = true;
+        // Garante que os dados da loja e moedas estão carregados antes de abrir
+        if (!gameProps.shopData) gameProps.shopData = getShopData();
+        if (gameProps.totalCoins === 0) gameProps.totalCoins = getTotalCoins();
+
         return;
     }
 
@@ -225,6 +420,18 @@ function handleInput(e) {
 
     if (e.type === 'keydown' && e.code === 'KeyM' && !gameProps.isGameOver) {
         activateMagnet();
+    }
+
+    if (e.type === 'keydown' && e.code === 'KeyF' && !gameProps.isGameOver) {
+        playerAttack();
+    }
+
+    if (e.type === 'keydown' && e.code === 'KeyS' && !gameProps.isGameOver) {
+        activatePlayerShield();
+    }
+
+    if (e.type === 'keydown' && e.code === 'KeyZ' && !gameProps.isGameOver) {
+        activateFury();
     }
 
     if (e.type === 'keydown' && e.code !== 'Space') return;
@@ -249,8 +456,27 @@ function handleInput(e) {
 
 document.addEventListener('keydown', handleInput);
 canvas.addEventListener('click', handleInput);
+canvas.addEventListener('wheel', handleInput);
+
+// Suporte a Scroll por Toque (Mobile)
+let touchStartY = 0;
+canvas.addEventListener('touchstart', (e) => {
+    touchStartY = e.touches[0].clientY;
+}, { passive: false });
+
+canvas.addEventListener('touchmove', (e) => {
+    if (gameProps.isShopOpen) {
+        e.preventDefault(); // Evita rolar a página inteira
+        const currentY = e.touches[0].clientY;
+        const deltaY = touchStartY - currentY;
+        handleShopScroll({ deltaY: deltaY });
+        touchStartY = currentY;
+    }
+}, { passive: false });
 
 // Iniciar
 initMovingTube();
 initBackground();
+loadAchievements();
+loadMissions();
 loop();
