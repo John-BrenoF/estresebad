@@ -5,7 +5,7 @@ import { bird } from './bird.js';
 import { pipes, updatePipes, drawPipes } from './pipes.js';
 import { initMovingTube, updateMovingTube, drawMovingTube } from './movingTube.js';
 import { drawScore, drawWaitingScreen, drawGameOverScreen, drawStartScreen, handleMenuClick, attackButtonRect, shieldButtonRect, furyButtonRect } from './ui.js';
-import { playDie, playShield, playSlowMo, playBossMusic, stopBossMusic, playPlayerAttack, playBossDefeated, playPlayerShield, playNormalMusic, stopNormalMusic } from './audio.js';
+import { playDie, playShield, playSlowMo, playBossMusic, stopBossMusic, playPlayerAttack, playBossDefeated, playPlayerShield, playNormalMusic, stopNormalMusic, resumeAudio } from './audio.js';
 import { createParticles, updateAndDrawParticles, clearParticles } from './particles.js';
 import { initBackground, updateAndDrawBackground } from './background.js';
 import { updateLightning, drawLightning, resetLightning } from './lightning.js';
@@ -257,6 +257,14 @@ function loop() {
     }
     ctx.restore();
     
+    // --- EFEITO VINHETA (Cinematográfico) ---
+    // Escurece as bordas da tela
+    const vignette = ctx.createRadialGradient(canvas.width/2, canvas.height/2, canvas.height/2.5, canvas.width/2, canvas.height/2, canvas.height);
+    vignette.addColorStop(0, 'rgba(0,0,0,0)');
+    vignette.addColorStop(1, 'rgba(0,0,0,0.5)');
+    ctx.fillStyle = vignette;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
     drawAchievements();
     drawScore();
     drawGeometryOverlay(); // Desenha o aviso ou a barra de tempo
@@ -363,6 +371,9 @@ function playerAttack() {
 }
 
 function handleInput(e) {
+    // Tenta retomar o contexto de áudio em qualquer interação do usuário
+    resumeAudio();
+
     if (gameProps.isShopOpen) {
         if (e.type === 'click') {
             const rect = canvas.getBoundingClientRect();

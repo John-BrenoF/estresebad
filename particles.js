@@ -7,12 +7,20 @@ class Particle {
         this.x = x;
         this.y = y;
         this.color = color;
-        this.type = type; // 'circle' ou 'square'
-        this.size = type === 'square' ? 34 : Math.random() * 5 + 3; // 34 é o tamanho do player
-        this.speedX = type === 'square' ? -gameProps.gameSpeed : Math.random() * 6 - 3;
-        this.speedY = type === 'square' ? 0 : Math.random() * 6 - 3;
+        this.type = type; // 'circle', 'square', 'dust'
         this.life = 1.0;
-        this.decay = type === 'square' ? 0.05 : Math.random() * 0.02 + 0.01;
+
+        if (type === 'dust') {
+            this.size = Math.random() * 6 + 2;
+            this.speedX = (Math.random() - 0.5) * 1 - gameProps.gameSpeed; // Move-se com o cenário
+            this.speedY = -Math.random() * 1.5 - 0.5; // Flutua para cima
+            this.decay = 0.04;
+        } else {
+            this.size = type === 'square' ? 34 : Math.random() * 5 + 3; 
+            this.speedX = type === 'square' ? -gameProps.gameSpeed : Math.random() * 6 - 3;
+            this.speedY = type === 'square' ? 0 : Math.random() * 6 - 3;
+            this.decay = type === 'square' ? 0.05 : Math.random() * 0.02 + 0.01;
+        }
     }
 
     update() {
@@ -31,6 +39,10 @@ class Particle {
         if (this.type === 'square') {
             // Rastro do Geometry (Quadrado vazado ou preenchido)
             ctx.fillRect(this.x, this.y, this.size, this.size);
+        } else if (this.type === 'dust') {
+            // Poeira (Círculo difuso)
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
         } else {
             // Partículas normais
             ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
@@ -48,6 +60,10 @@ export function createParticles(x, y, color, count = 20) {
 
 export function createGeometryTrail(x, y, color) {
     particles.push(new Particle(x, y, color, 'square'));
+}
+
+export function createDust(x, y) {
+    particles.push(new Particle(x, y, 'rgba(120, 110, 100, 0.4)', 'dust'));
 }
 
 export function updateAndDrawParticles() {

@@ -1,5 +1,5 @@
 import { ctx, canvas, gameProps } from './state.js';
-import { createParticles } from './particles.js';
+import { createParticles, createDust } from './particles.js';
 import { playExplosion } from './audio.js';
 import { triggerShockwave } from './main.js';
 
@@ -36,6 +36,11 @@ export function updateMovingTube(bird, onCollision) {
     const speedMultiplier = gameProps.isSlowMoActive ? 0.5 : 1;
     movingTube.x -= gameProps.gameSpeed * speedMultiplier; // Mesma velocidade dos canos para manter o fluxo
     
+    // Efeito de Poeira
+    if (!gameProps.isGameOver && gameProps.frames % 10 === 0) {
+        createDust(movingTube.x + movingTube.width / 2, canvas.height - 5);
+    }
+
     // Movimento Vertical (Oscilação Senoidal)
     // Usa gameProps.frames para criar um movimento suave de sobe e desce
     const oscillation = Math.sin(gameProps.frames * movingTube.oscillationSpeed) * movingTube.oscillationAmplitude;
@@ -73,14 +78,30 @@ export function drawMovingTube() {
     }
     // --------------------------------------
 
-    ctx.fillStyle = '#FF6B35';
+    // Gradiente Industrial (Laranja Metálico)
+    const gradient = ctx.createLinearGradient(movingTube.x, 0, movingTube.x + movingTube.width, 0);
+    gradient.addColorStop(0, '#8B2500'); // Ferrugem/Sombra
+    gradient.addColorStop(0.2, '#FF6B35'); // Laranja Base
+    gradient.addColorStop(0.5, '#FF9F75'); // Brilho
+    gradient.addColorStop(0.8, '#FF6B35');
+    gradient.addColorStop(1, '#8B2500');
+
+    ctx.fillStyle = gradient;
     ctx.fillRect(movingTube.x, 0, movingTube.width, movingTube.topHeight);
     ctx.fillRect(movingTube.x, canvas.height - movingTube.bottomHeight, movingTube.width, movingTube.bottomHeight);
     
-    ctx.strokeStyle = '#8B0000';
-    ctx.lineWidth = 3;
-    ctx.strokeRect(movingTube.x, 0, movingTube.width, movingTube.topHeight);
-    ctx.strokeRect(movingTube.x, canvas.height - movingTube.bottomHeight, movingTube.width, movingTube.bottomHeight);
+    // Tampas Metálicas (Cinza Escuro)
+    const capHeight = 20;
+    const capOverhang = 3;
+    
+    ctx.fillStyle = '#444'; // Metal escuro
+    ctx.fillRect(movingTube.x - capOverhang, movingTube.topHeight - capHeight, movingTube.width + capOverhang*2, capHeight);
+    ctx.fillRect(movingTube.x - capOverhang, canvas.height - movingTube.bottomHeight, movingTube.width + capOverhang*2, capHeight);
+    
+    // Bordas
+    ctx.strokeStyle = '#222';
+    ctx.strokeRect(movingTube.x - capOverhang, movingTube.topHeight - capHeight, movingTube.width + capOverhang*2, capHeight);
+    ctx.strokeRect(movingTube.x - capOverhang, canvas.height - movingTube.bottomHeight, movingTube.width + capOverhang*2, capHeight);
 }
 
 function checkMovingTubeCollision(bird, onCollision) {

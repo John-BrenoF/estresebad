@@ -1,6 +1,6 @@
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-function resumeAudio() {
+export function resumeAudio() {
     if (audioCtx.state === 'suspended') {
         audioCtx.resume();
     }

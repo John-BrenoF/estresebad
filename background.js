@@ -2,6 +2,8 @@ import { ctx, canvas, gameProps } from './state.js';
 
 const stars = [];
 const buildings = [];
+const mountains = [];
+const mountains2 = [];
 const clouds = [];
 const shootingStars = [];
 const fireflies = [];
@@ -36,6 +38,8 @@ const DAY_CYCLE_COLORS = {
 export function initBackground() {
     stars.length = 0;
     buildings.length = 0;
+    mountains.length = 0;
+    mountains2.length = 0;
     clouds.length = 0;
     shootingStars.length = 0;
     fireflies.length = 0;
@@ -50,20 +54,62 @@ export function initBackground() {
         });
     }
 
+    // Criar Montanhas Distantes (Camada 2 - Fundo)
+    let mX2 = 0;
+    while (mX2 < canvas.width * 2) {
+        const width = 150 + Math.random() * 300;
+        const height = 150 + Math.random() * 250;
+        mountains2.push({
+            x: mX2,
+            y: canvas.height - 30, 
+            width: width,
+            height: height
+        });
+        mX2 += width - 80; 
+    }
+
+    // Criar Montanhas (Camada mais distante)
+    let mX = 0;
+    while (mX < canvas.width * 2) {
+        const width = 100 + Math.random() * 200;
+        const height = 100 + Math.random() * 150;
+        mountains.push({
+            x: mX,
+            y: canvas.height - 50, // Base perto do chão
+            width: width,
+            height: height
+        });
+        mX += width - 50; // Sobreposição
+    }
+
     // Criar prédios (silhueta)
     let currentX = 0;
     while (currentX < canvas.width * 2) {
         const width = 40 + Math.random() * 60;
         const height = 50 + Math.random() * 150;
         const isLighter = Math.random() > 0.8;
-        buildings.push({
+        const building = {
             x: currentX,
             y: canvas.height - height,
             width: width,
             height: height,
             color: isLighter ? '#222' : '#1a1a1a', // Cor inicial, será atualizada
             isLighter: isLighter
-        });
+        };
+        buildings.push(building);
+        
+        // Gerar janelas para o prédio
+        building.windows = [];
+        const cols = Math.floor(width / 12);
+        const rows = Math.floor(height / 18);
+        for(let r=1; r<rows; r++) {
+            for(let c=1; c<cols; c++) {
+                if(Math.random() > 0.4) { // 60% de chance de ter janela
+                    building.windows.push({x: c*12, y: r*18, w: 6, h: 10});
+                }
+            }
+        }
+        
         currentX += width;
     }
 
@@ -410,9 +456,12 @@ export function updateAndDrawBackground() {
         const sunX = sunProgress * (canvas.width + 100) - 50;
         const sunY = canvas.height - 150 - Math.sin(sunProgress * Math.PI) * (canvas.height - 300);
         
+        const sunScreenX = sunX + pX * 0.1;
+        const sunScreenY = sunY + pY * 0.1;
+
         ctx.save();
-        ctx.translate(sunX + pX * 0.1, sunY + pY * 0.1);
-        
+        ctx.translate(sunScreenX, sunScreenY);
+
         // Brilho
         ctx.shadowColor = '#FFA500';
         ctx.shadowBlur = 50;
@@ -422,6 +471,34 @@ export function updateAndDrawBackground() {
         ctx.arc(0, 0, 35, 0, Math.PI * 2);
         ctx.fill();
         ctx.shadowBlur = 0;
+        
+        ctx.restore();
+
+        // --- LENS FLARE (Reflexo de Lente) ---
+        ctx.save();
+        ctx.globalCompositeOperation = 'screen'; // Mistura aditiva para luz
+        
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const dirX = centerX - sunScreenX;
+        const dirY = centerY - sunScreenY;
+        
+        // Função auxiliar para desenhar círculos do flare
+        const drawFlare = (pos, size, color, alpha) => {
+            const fx = sunScreenX + dirX * pos;
+            const fy = sunScreenY + dirY * pos;
+            ctx.fillStyle = color;
+            ctx.globalAlpha = alpha;
+            ctx.beginPath();
+            ctx.arc(fx, fy, size, 0, Math.PI * 2);
+            ctx.fill();
+        };
+
+        drawFlare(0.3, 40, 'rgba(255, 255, 200, 0.3)', 0.2);
+        drawFlare(0.6, 20, 'rgba(255, 200, 200, 0.3)', 0.15);
+        drawFlare(0.9, 10, 'rgba(200, 255, 200, 0.3)', 0.3);
+        drawFlare(1.3, 60, 'rgba(200, 200, 255, 0.2)', 0.1);
+        drawFlare(2.2, 100, 'rgba(255, 255, 255, 0.1)', 0.05);
         
         ctx.restore();
     }
@@ -459,6 +536,36 @@ export function updateAndDrawBackground() {
         ctx.restore();
     }
 
+    // Desenhar Montanhas Distantes (Paralaxe Muito Lenta)
+    const mountain2Color = lerpColor(bottomColor, '#333333', 0.4); // Mistura com o céu para profundidade
+    ctx.fillStyle = mountain2Color;
+    mountains2.forEach(m => {
+        if (!gameProps.isGameOver) {
+            m.x -= gameProps.gameSpeed * 0.05; // Mais lento que montanhas 1
+            if (m.x + m.width < 0) m.x += canvas.width * 2;
+        }
+        ctx.beginPath();
+        ctx.moveTo(m.x + pX * 0.15, m.y + pY * 0.15);
+        ctx.lineTo(m.x + m.width / 2 + pX * 0.15, m.y - m.height + pY * 0.15);
+        ctx.lineTo(m.x + m.width + pX * 0.15, m.y + pY * 0.15);
+        ctx.fill();
+    });
+
+    // Desenhar Montanhas (Paralaxe Lenta)
+    const mountainColor = lerpColor(bottomColor, '#000000', 0.3); // Um pouco mais escuro que o céu
+    ctx.fillStyle = mountainColor;
+    mountains.forEach(m => {
+        if (!gameProps.isGameOver) {
+            m.x -= gameProps.gameSpeed * 0.1; // Muito lento
+            if (m.x + m.width < 0) m.x += canvas.width * 2;
+        }
+        ctx.beginPath();
+        ctx.moveTo(m.x + pX * 0.3, m.y + pY * 0.3);
+        ctx.lineTo(m.x + m.width / 2 + pX * 0.3, m.y - m.height + pY * 0.3);
+        ctx.lineTo(m.x + m.width + pX * 0.3, m.y + pY * 0.3);
+        ctx.fill();
+    });
+
     // Desenhar e mover prédios (Paralaxe)
     // const dayFactor = Math.sin(time * Math.PI); // 0 à noite, 1 de dia - já definido acima
     buildings.forEach(b => {
@@ -471,6 +578,17 @@ export function updateAndDrawBackground() {
         b.color = lerpColor(nightColor, dayColor, dayFactor);
         ctx.fillStyle = b.color;
         ctx.fillRect(b.x + pX, b.y + pY, b.width + 1, b.height); // +1 para evitar linhas brancas entre prédios
+        
+        // Desenhar Janelas
+        // À noite (time < 0.25 ou > 0.75), as janelas acendem (amarelo claro)
+        // De dia, elas ficam escuras/reflexivas (azul claro transparente)
+        const isNight = time < 0.25 || time > 0.75;
+        const windowColor = isNight ? 'rgba(255, 255, 200, 0.6)' : 'rgba(200, 220, 255, 0.1)';
+        
+        ctx.fillStyle = windowColor;
+        b.windows.forEach(w => {
+            ctx.fillRect(b.x + pX + w.x, b.y + pY + w.y, w.w, w.h);
+        });
     });
 
     // --- NEBLINA MATINAL ---

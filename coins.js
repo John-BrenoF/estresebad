@@ -51,7 +51,14 @@ export function updateAndDrawCoins(bird) {
             ctx.save();
             ctx.translate(c.x, c.y);
             ctx.scale(Math.sin(c.rotation), 1); // Efeito de girar 3D simples
-            ctx.fillStyle = '#FFD700';
+            
+            // Gradiente Dourado Radial (Efeito de Esfera/Brilho)
+            const gradient = ctx.createRadialGradient(-c.size/3, -c.size/3, 0, 0, 0, c.size);
+            gradient.addColorStop(0, '#FFF'); // Ponto de luz (Branco)
+            gradient.addColorStop(0.3, '#FFD700'); // Ouro
+            gradient.addColorStop(1, '#DAA520'); // Ouro Escuro (Borda)
+            
+            ctx.fillStyle = gradient;
             ctx.beginPath();
             ctx.arc(0, 0, c.size, 0, Math.PI * 2);
             ctx.fill();

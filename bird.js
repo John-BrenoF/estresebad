@@ -4,6 +4,25 @@ import { SKINS } from './constants.js';
 import { createParticles, createGeometryTrail } from './particles.js';
 
 export function drawBird(x, y, width, height, rotation, wingFrame) {
+    // --- SOMBRA NO CHÃO ---
+    // Desenha a sombra antes de qualquer transformação do pássaro
+    const groundY = canvas.height - 50; // Nível aproximado do chão/água
+    const distToGround = groundY - (y + height);
+    
+    if (distToGround > -50) { // Só desenha se estiver acima ou perto do chão
+        const shadowScale = Math.max(0.2, 1 - (distToGround / 400)); // Diminui com a altura
+        const shadowAlpha = Math.max(0.0, 0.4 - (distToGround / 300)); // Desaparece com a altura
+        
+        ctx.save();
+        ctx.translate(x + width / 2, groundY + 10); // +10 para ficar na "superfície"
+        ctx.scale(shadowScale, 0.3 * shadowScale); // Achatada
+        ctx.fillStyle = `rgba(0, 0, 0, ${shadowAlpha})`;
+        ctx.beginPath();
+        ctx.arc(0, 0, width, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    }
+
     ctx.save();
     // Transladar para o centro do pássaro para rotacionar corretamente
     ctx.translate(x + width / 2, y + height / 2);
@@ -90,7 +109,17 @@ export function drawBird(x, y, width, height, rotation, wingFrame) {
     }
 
     // Desenhar Corpo (Roxo Escuro)
-    ctx.fillStyle = birdColor;
+    // Base
+    ctx.fillStyle = birdColor; 
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 12, 10, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Iluminação (Highlight) - Parte superior esquerda
+    const highlight = ctx.createRadialGradient(-4, -4, 1, -4, -4, 8);
+    highlight.addColorStop(0, 'rgba(255, 255, 255, 0.5)');
+    highlight.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    ctx.fillStyle = highlight;
     ctx.beginPath();
     ctx.ellipse(0, 0, 12, 10, 0, 0, Math.PI * 2);
     ctx.fill();

@@ -1,7 +1,7 @@
 import { ctx, canvas, gameProps } from './state.js';
 import { playScore, playExplosion } from './audio.js';
 import { triggerShockwave } from './main.js';
-import { createParticles } from './particles.js';
+import { createParticles, createDust } from './particles.js';
 import { createCoin } from './coins.js';
 import { spawnMovingTube, movingTube } from './movingTube.js';
 import { finishGeometryMode } from './geometry.js';
@@ -102,14 +102,36 @@ export function drawPipes() {
         }
         // -----------------------------------
 
-        ctx.fillStyle = '#2E8B57';
+        // --- CANOS PADRÃO (Visual 3D) ---
+        
+        // Gradiente para dar volume cilíndrico
+        const gradient = ctx.createLinearGradient(p.x, 0, p.x + pipeWidth, 0);
+        gradient.addColorStop(0, '#1a5230'); // Sombra escura
+        gradient.addColorStop(0.2, '#2E8B57'); // Cor base
+        gradient.addColorStop(0.5, '#66cdaa'); // Brilho central
+        gradient.addColorStop(0.8, '#2E8B57'); // Cor base
+        gradient.addColorStop(1, '#1a5230'); // Sombra escura
+
+        ctx.fillStyle = gradient;
         ctx.fillRect(p.x, 0, pipeWidth, p.top);
         ctx.fillRect(p.x, canvas.height - p.bottom, pipeWidth, p.bottom);
         
-        ctx.strokeStyle = '#000';
+        // Tampas dos canos (Borda mais larga na ponta)
+        const capHeight = 25;
+        const capOverhang = 4;
+        
+        // Tampa Superior
+        ctx.fillRect(p.x - capOverhang, p.top - capHeight, pipeWidth + capOverhang * 2, capHeight);
+        // Tampa Inferior
+        ctx.fillRect(p.x - capOverhang, canvas.height - p.bottom, pipeWidth + capOverhang * 2, capHeight);
+        
+        // Bordas para definição
+        ctx.strokeStyle = '#0f331c'; // Verde bem escuro
         ctx.lineWidth = 2;
-        ctx.strokeRect(p.x, 0, pipeWidth, p.top);
-        ctx.strokeRect(p.x, canvas.height - p.bottom, pipeWidth, p.bottom);
+        
+        // Desenha contorno das tampas
+        ctx.strokeRect(p.x - capOverhang, p.top - capHeight, pipeWidth + capOverhang * 2, capHeight);
+        ctx.strokeRect(p.x - capOverhang, canvas.height - p.bottom, pipeWidth + capOverhang * 2, capHeight);
     }
 }
 
@@ -194,6 +216,11 @@ export function updatePipes(bird, onCollision) {
         let p = pipes[i];
         const speedMultiplier = gameProps.isSlowMoActive ? 0.5 : 1;
         p.x -= gameProps.gameSpeed * speedMultiplier;
+
+        // Efeito de Poeira arrastando no chão
+        if (!gameProps.isGameOver && gameProps.frames % 15 === 0) {
+            createDust(p.x + pipeWidth / 2, canvas.height - 5);
+        }
 
         // Lógica de colisão
         let collided = false;
