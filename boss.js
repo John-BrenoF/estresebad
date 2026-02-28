@@ -65,7 +65,7 @@ export function updateBoss(bird, onCollision) {
     if (boss.timer <= 0) {
         if (boss.state === 'idle') {
             // Escolhe um ataque aleatório
-            const attacks = ['attack1', 'attack2', 'attack3', 'attack4', 'attack5'];
+            const attacks = ['attack1', 'attack3', 'attack4', 'attack5'];
             boss.state = attacks[Math.floor(Math.random() * attacks.length)];
             boss.attackTimer = 0;
             boss.timer = 240; // Duração do ataque (~4s)
@@ -88,15 +88,6 @@ export function updateBoss(bird, onCollision) {
         }
     }
     
-    // Ataque 2: Faixas de Luz Verticais
-    if (boss.state === 'attack2') {
-        if (boss.attackTimer % 50 === 0 && boss.attackTimer < 200) {
-            const xPos = Math.random() * (canvas.width - 50);
-            triggerScreenShake(4, 15);
-            boss.lasers.push({ x: xPos, y: 0, w: 40, h: canvas.height, warning: true, timer: 40 });
-        }
-    }
-
     // Ataque 3: Esferas de Energia (Teleguiadas no início)
     if (boss.state === 'attack3') {
         if (boss.attackTimer % 40 === 0) {

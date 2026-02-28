@@ -92,6 +92,57 @@ function drawCompleteBat(birdColor, wingFrame) {
     ctx.fill();
 }
 
+function drawOriginalSkin(wingFrame) {
+    ctx.save();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#000';
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    // Corpo (Amarelo)
+    ctx.fillStyle = '#F4D03F';
+    ctx.beginPath();
+    ctx.ellipse(-2, 0, 15, 12, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Olho (Branco Grande)
+    ctx.fillStyle = '#FFF';
+    ctx.beginPath();
+    ctx.arc(6, -6, 6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Pupila
+    ctx.fillStyle = '#000';
+    ctx.beginPath();
+    ctx.arc(8, -6, 1.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Asa (Branca) - Batendo
+    ctx.fillStyle = '#FFF';
+    const wingY = Math.sin(wingFrame) * 4;
+    ctx.beginPath();
+    ctx.ellipse(-8, 2 + wingY, 7, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Bico (Laranja)
+    ctx.fillStyle = '#E67E22';
+    // Parte de cima
+    ctx.beginPath();
+    ctx.rect(6, 0, 10, 6);
+    ctx.fill();
+    ctx.stroke();
+    // Parte de baixo
+    ctx.beginPath();
+    ctx.rect(6, 6, 10, 4);
+    ctx.fill();
+    ctx.stroke();
+    
+    ctx.restore();
+}
+
 export function drawBird(x, y, width, height, rotation, wingFrame) {
     // --- SOMBRA NO CHÃO ---
     // Desenha a sombra antes de qualquer transformação do pássaro
@@ -223,7 +274,11 @@ export function drawBird(x, y, width, height, rotation, wingFrame) {
     }
 
     // Desenho principal
-    drawCompleteBat(birdColor, wingFrame);
+    if (currentSkin.isOriginal) {
+        drawOriginalSkin(wingFrame);
+    } else {
+        drawCompleteBat(birdColor, wingFrame);
+    }
 
     ctx.restore();
     ctx.shadowBlur = 0; // Resetar shadow

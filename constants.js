@@ -16,6 +16,7 @@ export const SKINS = [
     { id: 'default', name: 'Roxo Padrão', color: '#4B0082', price: 0 },
     { id: 'toxic', name: 'Verde Tóxico', color: '#7CFC00', price: 100 },
     { id: 'glitch', name: 'Glitch', color: '#8A2BE2', price: 1200, glow: true, isGlitch: true },
+    { id: 'original', name: 'Clássico', color: '#F4D03F', price: 800, isOriginal: true },
     { id: 'fire', name: 'Laranja Fogo', color: '#FF4500', price: 150 },
     { id: 'ice', name: 'Azul Gelo', color: '#00BFFF', price: 200 },
     { id: 'neon', name: 'Neon Brilhante', color: '#FF00FF', price: 500, glow: true },
