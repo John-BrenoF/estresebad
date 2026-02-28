@@ -189,7 +189,7 @@ horrorMusic.loop = true;
 export function playNormalMusic() {
     stopNormalMusic(); // Garante que ambas estejam paradas/resetadas antes de escolher
 
-    if (Math.random() < 0.3) { // 30% de chance
+    if (Math.random() < 0.41{ // 30% de chance
         horrorMusic.play().catch(e => console.error("Erro ao tocar música horror:", e));
     } else {
         normalMusic.play().catch(e => console.error("Erro ao tocar música normal:", e));
