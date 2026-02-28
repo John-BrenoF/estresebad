@@ -129,6 +129,18 @@ export function drawBird(x, y, width, height, rotation, wingFrame) {
     ctx.quadraticCurveTo(15, wingY + 10, 4, 8);
     ctx.fill();
 
+    // Detalhes de "ossos" da asa
+    ctx.strokeStyle = '#441155'; // Roxo mais escuro e saturado
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    // Asa Esquerda
+    ctx.moveTo(-4, 2);
+    ctx.lineTo(-25, wingY + 5);
+    // Asa Direita
+    ctx.moveTo(4, 2);
+    ctx.lineTo(25, wingY + 5);
+    ctx.stroke();
+
     // 2. Desenhar Orelhas (Pontudas e Grandes)
     ctx.fillStyle = birdColor;
     ctx.beginPath();
@@ -136,20 +148,32 @@ export function drawBird(x, y, width, height, rotation, wingFrame) {
     ctx.moveTo(10, -5); ctx.lineTo(14, -24); ctx.lineTo(4, -10);   // Orelha Direita
     ctx.fill();
 
+    // Detalhe interno da orelha
+    ctx.fillStyle = 'rgba(0,0,0,0.2)';
+    ctx.beginPath();
+    ctx.moveTo(-9, -7); ctx.lineTo(-12, -20); ctx.lineTo(-4, -11); // Interno Esquerda
+    ctx.moveTo(9, -7); ctx.lineTo(12, -20); ctx.lineTo(4, -11);   // Interno Direita
+    ctx.fill();
+
     // 3. Desenhar Corpo (Redondo e "Felpudo")
     ctx.fillStyle = birdColor; 
     ctx.beginPath();
-    ctx.ellipse(0, 0, 14, 12, 0, 0, Math.PI * 2); // Corpo levemente maior
-    ctx.fill();
+    ctx.ellipse(0, 0, 14, 12, 0, 0, Math.PI * 2); // Define o caminho da elipse
+    ctx.fill(); // Pinta a cor base
+
+    // Sombra na parte de baixo do corpo para dar volume
+    const shadow = ctx.createRadialGradient(0, 6, 1, 0, 4, 14);
+    shadow.addColorStop(0, 'rgba(0,0,0,0.3)');
+    shadow.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = shadow;
+    ctx.fill(); // Preenche a mesma elipse com a sombra
 
     // Iluminação (Highlight) - Parte superior esquerda
     const highlight = ctx.createRadialGradient(-5, -5, 1, -5, -5, 10);
     highlight.addColorStop(0, 'rgba(255, 255, 255, 0.5)');
     highlight.addColorStop(1, 'rgba(255, 255, 255, 0)');
     ctx.fillStyle = highlight;
-    ctx.beginPath();
-    ctx.ellipse(0, 0, 14, 12, 0, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.fill(); // Preenche a mesma elipse com a luz
 
     // 4. Desenhar Rosto
     // Olhos (Amarelos brilhantes para visão noturna)

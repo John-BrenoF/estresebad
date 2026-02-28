@@ -27,7 +27,7 @@ export function drawScore() {
     ctx.fillText("Vel: " + gameProps.gameSpeed.toFixed(1), 10, 20);
 
     // Desenhar Moedas
-    ctx.fillStyle = '#FFD700';
+    ctx.fillStyle = '#8A2BE2'; // Roxo
     ctx.fillText("💰 " + gameProps.currentCoins, 10, 40);
 
     // UI da Carta de Imunidade
@@ -41,7 +41,7 @@ export function drawScore() {
         ctx.fillStyle = '#FFF';
         ctx.fillText(`Imune [E]: ${gameProps.shopData.immunityCards}`, canvas.width - 120, 20);
         if (gameProps.isImmune) {
-            ctx.fillStyle = '#00FFFF';
+            ctx.fillStyle = '#8A2BE2'; // Roxo
             ctx.fillText(`ATIVO!`, canvas.width - 120, 40);
         } else if (gameProps.cardCooldownTimer > 0) {
             ctx.fillStyle = '#FF6B6B';
@@ -53,7 +53,7 @@ export function drawScore() {
         ctx.fillStyle = '#FFF';
         ctx.fillText(`Ímã [M]`, canvas.width - 120, 60);
         if (gameProps.isMagnetActive) {
-            ctx.fillStyle = '#FFD700';
+            ctx.fillStyle = '#8A2BE2'; // Roxo
             ctx.fillText(`ATIVO!`, canvas.width - 120, 80);
         } else if (gameProps.magnetCooldownTimer > 0) {
             ctx.fillStyle = '#FF6B6B';
@@ -65,7 +65,7 @@ export function drawScore() {
         ctx.fillStyle = '#FFF';
         ctx.fillText(`Slow-Mo [T]: ${gameProps.shopData.slowMoCharges}`, canvas.width - 120, 100);
         if (gameProps.isSlowMoActive) {
-            ctx.fillStyle = '#4ECDC4';
+            ctx.fillStyle = '#8A2BE2'; // Roxo
             ctx.fillText(`ATIVO!`, canvas.width - 120, 120);
         } else if (gameProps.slowMoCooldownTimer > 0) {
             ctx.fillStyle = '#FF6B6B';
@@ -124,9 +124,9 @@ export function drawScore() {
 
             // Botão de Fúria
             const isReady = gameProps.furyCharge >= 5;
-            ctx.fillStyle = isReady ? 'rgba(255, 69, 0, 0.8)' : 'rgba(100, 100, 100, 0.5)';
+            ctx.fillStyle = isReady ? '#6A0DAD' : 'rgba(100, 100, 100, 0.5)'; // Roxo
             ctx.fillRect(furyButtonRect.x, furyButtonRect.y, furyButtonRect.w, furyButtonRect.h);
-            ctx.strokeStyle = isReady ? '#FFD700' : '#FFF';
+            ctx.strokeStyle = isReady ? '#8A2BE2' : '#FFF'; // Roxo
             ctx.lineWidth = 3;
             ctx.strokeRect(furyButtonRect.x, furyButtonRect.y, furyButtonRect.w, furyButtonRect.h);
             
@@ -140,19 +140,19 @@ export function drawScore() {
 }
 
 export function drawWaitingScreen() {
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+    ctx.fillStyle = '#000000'; // Fundo preto
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
     const elapsed = (Date.now() - gameProps.waitStartTime) / 1000;
     const remaining = Math.max(0, gameProps.selectedDelay - elapsed);
     const displayTime = remaining.toFixed(1);
     
-    ctx.fillStyle = '#FF6B6B';
+    ctx.fillStyle = '#8A2BE2'; // Roxo
     ctx.font = "bold 28px Changa";
     ctx.textAlign = "center";
     ctx.fillText("⏰ AGUARDE!", canvas.width / 2, canvas.height / 2 - 60);
     
-    ctx.fillStyle = '#4ECDC4';
+    ctx.fillStyle = '#8A2BE2'; // Roxo
     ctx.font = "bold 60px Changa";
     ctx.fillText(displayTime + "s", canvas.width / 2, canvas.height / 2 + 10);
     
@@ -161,7 +161,7 @@ export function drawWaitingScreen() {
     ctx.fillText("O jogo iniciará automaticamente", canvas.width / 2, canvas.height / 2 + 50);
     ctx.fillText("após a contagem regressiva.", canvas.width / 2, canvas.height / 2 + 75);
     
-    ctx.fillStyle = '#FFD700';
+    ctx.fillStyle = '#8A2BE2'; // Roxo
     ctx.font = "14px Changa";
     let timeText = "";
     if (gameProps.selectedDelay === 0.2) timeText = "Rápido! (0.2s)";
@@ -174,12 +174,12 @@ export function drawWaitingScreen() {
 }
 
 export function drawGameOverScreen() {
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillStyle = '#000000'; // Fundo preto
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
     let currentY = 200;
 
-    ctx.fillStyle = '#FF4444';
+    ctx.fillStyle = '#8A2BE2'; // Roxo
     ctx.font = "bold 40px Changa";
     ctx.textAlign = "center";
     ctx.fillText("FIM DE JOGO!", canvas.width / 2, currentY);
@@ -192,7 +192,7 @@ export function drawGameOverScreen() {
     
     if (gameProps.isNewHighScore) {
         currentY += 40;
-        ctx.fillStyle = '#FFD700';
+        ctx.fillStyle = '#8A2BE2'; // Roxo
         ctx.font = "bold 26px Changa";
         ctx.fillText("⭐ NOVO RECORDE! ⭐", canvas.width / 2, currentY);
     }
@@ -200,18 +200,18 @@ export function drawGameOverScreen() {
     currentY += 60;
 
     // Estatísticas secundárias
-    ctx.fillStyle = '#FFD700';
+    ctx.fillStyle = '#8A2BE2'; // Roxo
     ctx.font = "22px Changa";
     ctx.fillText("💰 Moedas Coletadas: " + gameProps.currentCoins, canvas.width / 2, currentY);
     
     currentY += 35;
     
-    ctx.fillStyle = '#FFFF00';
+    ctx.fillStyle = '#8A2BE2'; // Roxo
     ctx.font = "22px Changa";
     ctx.fillText("⚡ Raios Sobrevividos: " + gameProps.lightningSurvived, canvas.width / 2, currentY);
 
     // Instruções na parte inferior
-    ctx.fillStyle = '#70c5ce';
+    ctx.fillStyle = '#AAAAAA'; // Cinza
     ctx.font = "18px Changa";
     ctx.fillText("Clique ou Espaço para sortear tempo", canvas.width / 2, canvas.height - 80);
     ctx.fillText("e iniciar nova partida", canvas.width / 2, canvas.height - 55);
@@ -233,7 +233,7 @@ function draw3DButton(rect, color, text, fontSize = "30px") {
     ctx.fillRect(rect.x + 4, rect.y + 4, rect.w, rect.h);
 
     // Borda Escura (Bottom/Right)
-    ctx.fillStyle = '#111'; 
+    ctx.fillStyle = '#555555'; // Cinza
     ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
 
     // Cor Principal (Top/Left - Efeito de luz)
@@ -245,6 +245,21 @@ function draw3DButton(rect, color, text, fontSize = "30px") {
     ctx.font = fontSize + " Changa";
     ctx.shadowColor = 'rgba(0,0,0,0.5)';
     ctx.shadowBlur = 2;
+
+    // Efeito Glitch no texto
+    if (gameProps.rgbSplitTimer > 0 && Math.random() < 0.5) {
+        const xOff = (Math.random() - 0.5) * 8;
+        const yOff = (Math.random() - 0.5) * 8;
+        ctx.save();
+        ctx.globalCompositeOperation = 'screen';
+        ctx.fillStyle = 'rgba(255, 0, 0, 0.7)';
+        ctx.fillText(text, rect.x + rect.w / 2 - 2 + xOff, rect.y + rect.h / 2 + 10 + yOff);
+        ctx.fillStyle = 'rgba(0, 255, 255, 0.7)';
+        ctx.fillText(text, rect.x + rect.w / 2 - 2 - xOff, rect.y + rect.h / 2 + 10 - yOff);
+        ctx.restore();
+    }
+
+    ctx.fillStyle = '#FFF';
     ctx.fillText(text, rect.x + rect.w / 2 - 2, rect.y + rect.h / 2 + 10);
     ctx.shadowBlur = 0;
 }
@@ -258,28 +273,43 @@ export function drawStartScreen() {
     ctx.save();
     ctx.translate(canvas.width / 2, canvas.height / 2 - 120);
     ctx.scale(scale, scale);
-    ctx.fillStyle = '#FFD700';
+    ctx.fillStyle = '#8A2BE2'; // Roxo
     ctx.font = "bold 45px Changa";
     ctx.textAlign = "center";
+
+    // Efeito Glitch no Título
+    if (gameProps.rgbSplitTimer > 0 && Math.random() < 0.7) {
+        const xOff = (Math.random() - 0.5) * 10;
+        const yOff = (Math.random() - 0.5) * 10;
+        ctx.save();
+        ctx.globalCompositeOperation = 'screen';
+        ctx.fillStyle = 'rgba(255, 0, 0, 0.7)';
+        ctx.fillText("MORCEGO FLAP", xOff, yOff);
+        ctx.fillStyle = 'rgba(0, 255, 255, 0.7)';
+        ctx.fillText("MORCEGO FLAP", -xOff, -yOff);
+        ctx.restore();
+    }
+
+    ctx.fillStyle = '#8A2BE2'; // Roxo
     ctx.fillText("MORCEGO FLAP", 0, 0);
     ctx.restore();
     
     ctx.textAlign = "center"; // Centraliza o texto para todos os botões
 
     // Botão Iniciar
-    draw3DButton(startButton, '#2E8B57', "Iniciar");
+    draw3DButton(startButton, '#6A0DAD', "Iniciar");
 
     // Botão Hardcore
-    draw3DButton(hardcoreButton, '#8B0000', "Hardcore");
+    draw3DButton(hardcoreButton, '#6A0DAD', "Hardcore");
 
     // Botão Boss Rush
-    draw3DButton(bossButton, '#800080', "Boss Rush");
+    draw3DButton(bossButton, '#6A0DAD', "Boss Rush");
 
     // Botão Loja
-    draw3DButton(shopButton, '#4682B4', "Loja", "24px");
+    draw3DButton(shopButton, '#6A0DAD', "Loja", "24px");
 
     // Botão Missões
-    draw3DButton(missionsButton, '#663399', "Missões", "24px");
+    draw3DButton(missionsButton, '#6A0DAD', "Missões", "24px");
 
     ctx.textAlign = "left";
 }

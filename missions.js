@@ -1,5 +1,6 @@
 import { ctx, canvas, gameProps } from './state.js';
 import { saveTotalCoins, getTotalCoins } from './storage.js';
+import { playGlitch } from './audio.js';
 
 const MISSION_TYPES = [
     { id: 'score', text: 'Alcance a pontuação de', value: [20, 8, 30], icon: '🏆' },
@@ -153,24 +154,21 @@ export function handleMissionScroll(e) {
 }
 
 export function drawMissionMap() {
-    // Fundo com gradiente escuro
-    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    gradient.addColorStop(0, '#1a1a1a');
-    gradient.addColorStop(1, '#000000');
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+    // Fundo preto
+    ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = gradient;
+    ctx.fillStyle = '#000000';
     ctx.globalAlpha = 0.95;
     ctx.fillRect(20, 20, canvas.width - 40, canvas.height - 40);
     ctx.globalAlpha = 1.0;
     
     // Borda do painel
-    ctx.strokeStyle = '#444';
+    ctx.strokeStyle = '#888888'; // Cinza
     ctx.lineWidth = 2;
     ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
 
     // Título
-    ctx.fillStyle = '#FFD700';
+    ctx.fillStyle = '#8A2BE2'; // Roxo
     ctx.font = "bold 32px Changa";
     ctx.textAlign = "center";
     ctx.fillText("MISSÕES DIÁRIAS", canvas.width / 2, 80);
@@ -196,11 +194,11 @@ export function drawMissionMap() {
         const w = canvas.width - 80;
 
         // Fundo do Card
-        ctx.fillStyle = mission.completed ? (mission.claimed ? '#222' : '#1a3300') : '#333';
+        ctx.fillStyle = mission.completed ? (mission.claimed ? '#222' : '#330033') : '#333'; // Fundo preto/roxo escuro
         ctx.fillRect(x, y, w, CARD_HEIGHT);
         
         // Borda do Card
-        ctx.strokeStyle = mission.completed ? (mission.claimed ? '#444' : '#00FF00') : '#555';
+        ctx.strokeStyle = mission.completed ? (mission.claimed ? '#888888' : '#6A0DAD') : '#888888'; // Bordas cinza/roxa
         ctx.lineWidth = 2;
         ctx.strokeRect(x, y, w, CARD_HEIGHT);
 
@@ -239,7 +237,7 @@ export function drawMissionMap() {
 
         ctx.fillStyle = '#111';
         ctx.fillRect(barX, barY, barWidth, barHeight); // Fundo da barra
-        ctx.fillStyle = mission.completed ? '#00FF00' : '#00BFFF';
+        ctx.fillStyle = mission.completed ? '#6A0DAD' : '#6A0DAD'; // Barra de progresso roxa
         ctx.fillRect(barX, barY, barWidth * progressPercent, barHeight); // Preenchimento
 
         // Texto de Status / Botão
@@ -249,7 +247,7 @@ export function drawMissionMap() {
             ctx.fillText(`Progresso Oculto`, x + 60, y + 80);
         } else if (mission.completed && !mission.claimed) {
             // Botão de Resgatar
-            ctx.fillStyle = '#FFD700';
+            ctx.fillStyle = '#8A2BE2'; // Roxo
             ctx.fillText(`✨ CLIQUE PARA RESGATAR (+${mission.reward} 💰)`, x + 60, y + 80);
         } else if (mission.claimed) {
             ctx.fillStyle = '#888';
@@ -294,12 +292,16 @@ export function handleMissionClick(x, y) {
             mission.claimed = true;
             saveTotalCoins(mission.reward);
             gameProps.totalCoins = getTotalCoins(); // Update state
+            gameProps.rgbSplitTimer = 10;
+            playGlitch();
             localStorage.setItem('morcegoFlap_missions', JSON.stringify(dailyMissions));
         }
     });
 
     // Fechar ao clicar fora da área da lista (cabeçalho ou rodapé)
     if (y < 130 || y > canvas.height - 50) {
+        gameProps.rgbSplitTimer = 15;
+        playGlitch();
         gameProps.isMissionMapOpen = false;
     }
 }

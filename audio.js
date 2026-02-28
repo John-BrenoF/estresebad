@@ -277,6 +277,39 @@ export function playPlayerShield() {
     osc.stop(audioCtx.currentTime + 0.2);
 }
 
+export function playGlitch() {
+    resumeAudio();
+    const bufferSize = audioCtx.sampleRate * 0.1; // Short burst
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    
+    for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1; // White noise
+    }
+
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = buffer;
+
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.Q.value = 20;
+    
+    // Rapidly change frequency
+    filter.frequency.setValueAtTime(3000, audioCtx.currentTime);
+    filter.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.05);
+    filter.frequency.exponentialRampToValueAtTime(4000, audioCtx.currentTime + 0.1);
+
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(audioCtx.destination);
+    noise.start();
+    noise.stop(audioCtx.currentTime + 0.1);
+}
+
 export function playCloneSpawn() {
     resumeAudio();
     const osc = audioCtx.createOscillator();

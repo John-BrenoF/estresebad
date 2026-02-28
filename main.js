@@ -5,7 +5,7 @@ import { bird } from './bird.js';
 import { pipes, updatePipes, drawPipes } from './pipes.js';
 import { initMovingTube, updateMovingTube, drawMovingTube } from './movingTube.js';
 import { drawScore, drawWaitingScreen, drawGameOverScreen, drawStartScreen, handleMenuClick, attackButtonRect, shieldButtonRect, furyButtonRect } from './ui.js';
-import { playDie, playShield, playSlowMo, playBossMusic, stopBossMusic, playPlayerAttack, playBossDefeated, playPlayerShield, playNormalMusic, stopNormalMusic, resumeAudio } from './audio.js';
+import { playDie, playShield, playSlowMo, playBossMusic, stopBossMusic, playPlayerAttack, playBossDefeated, playPlayerShield, playNormalMusic, stopNormalMusic, resumeAudio, playGlitch } from './audio.js';
 import { createParticles, updateAndDrawParticles, clearParticles } from './particles.js';
 import { initBackground, updateAndDrawBackground } from './background.js';
 import { updateLightning, drawLightning, resetLightning } from './lightning.js';
@@ -406,6 +406,11 @@ function handleInput(e) {
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
         const action = handleMenuClick(x, y);
+        if (action) {
+            gameProps.rgbSplitTimer = 15; // Duração fixa para o glitch do clique
+            playGlitch();
+        }
+
         if (action === 'start') {
             gameProps.isInMenu = false;
             gameProps.isHardcoreMode = false;
@@ -510,6 +515,8 @@ function handleInput(e) {
     if (gameProps.isGameOver) {
         // Impede reiniciar se morreu há menos de 1 segundo (evita cliques acidentais)
         if (Date.now() - gameProps.lastDeathTime < 1000) return;
+        gameProps.rgbSplitTimer = 15;
+        playGlitch();
         startWaitingPeriod();
     } else {
         bird.jumpAction();

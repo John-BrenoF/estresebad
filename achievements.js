@@ -57,10 +57,10 @@ export function drawAchievements() {
     ctx.globalAlpha = alpha;
     ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
     ctx.fillRect(canvas.width / 2 - 150, 80, 300, 60);
-    ctx.strokeStyle = '#FFD700';
+    ctx.strokeStyle = '#888888'; // Cinza para bordas
     ctx.strokeRect(canvas.width / 2 - 150, 80, 300, 60);
 
-    ctx.fillStyle = '#FFD700';
+    ctx.fillStyle = '#8A2BE2'; // Roxo para detalhes
     ctx.font = 'bold 18px Changa';
     ctx.textAlign = 'center';
     ctx.fillText('🏆 Conquista Desbloqueada!', canvas.width / 2, 105);
