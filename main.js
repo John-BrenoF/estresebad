@@ -600,6 +600,12 @@ window.addEventListener('deviceorientation', (e) => {
     }
 });
 
+// Definir ícone do site
+const favicon = document.createElement('link');
+favicon.rel = 'icon';
+favicon.href = 'iconsite.png';
+document.head.appendChild(favicon);
+
 // Iniciar
 initMovingTube();
 initBackground();
