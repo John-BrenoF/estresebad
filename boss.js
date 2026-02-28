@@ -1,7 +1,7 @@
 import { ctx, canvas, gameProps } from './state.js';
 import { saveTotalCoins, getTotalCoins } from './storage.js';
 import { triggerScreenShake } from './main.js';
-import { playBossDefeated } from './audio.js';
+import { playBossDefeated, playBossLaser, playBossRedLightning } from './audio.js';
 
 export const boss = {
     x: 0,
@@ -19,7 +19,8 @@ export const boss = {
     lasers: [], // {x, y, w, h, warning: boolean}
     frame: 0,
     survivalTimer: 0,
-    hitTimer: 0 // Para o efeito de piscar ao ser atingido
+    hitTimer: 0, // Para o efeito de piscar ao ser atingido
+    redLightningTimer: 0 // Timer visual para o raio vermelho
 };
 
 export function initBoss() {
@@ -34,6 +35,7 @@ export function initBoss() {
     boss.lasers = [];
     boss.frame = 0;
     boss.survivalTimer = 0;
+    boss.redLightningTimer = 0;
 }
 
 export function updateBoss(bird, onCollision) {
@@ -84,6 +86,7 @@ export function updateBoss(bird, onCollision) {
         if (boss.attackTimer % 60 === 0 && boss.attackTimer < 180) {
             const yPos = Math.random() * (canvas.height - 50);
             triggerScreenShake(4, 15);
+            playBossLaser();
             boss.lasers.push({ x: 0, y: yPos, w: canvas.width, h: 40, warning: true, timer: 40 });
         }
     }
@@ -152,8 +155,9 @@ export function updateBoss(bird, onCollision) {
         }
 
         // Player shot hitting boss
-        if (p.type === 'player_shot' && p.x > boss.x && p.x < boss.x + boss.width && p.y > boss.y && p.y < boss.y + boss.height) {
-            boss.hp -= 25;
+        if ((p.type === 'player_shot' || p.type === 'player_shot_red') && p.x > boss.x && p.x < boss.x + boss.width && p.y > boss.y && p.y < boss.y + boss.height) {
+            const damage = p.type === 'player_shot_red' ? 50 : 25; // Dano dobrado se for vermelho
+            boss.hp -= damage;
             boss.hitTimer = 10;
             boss.projectiles.splice(i, 1);
             i--;
@@ -177,6 +181,22 @@ export function updateBoss(bird, onCollision) {
         if (p.x < -50 || p.y < -50 || p.y > canvas.height + 50) {
             boss.projectiles.splice(i, 1);
             i--;
+        }
+    }
+
+    // --- ATAQUE ESPECIAL: RAIO VERMELHO ---
+    // Condições: Noite (time < 0.25 ou > 0.75) E Chovendo
+    const isNight = gameProps.timeOfDay < 0.25 || gameProps.timeOfDay > 0.75;
+    if (isNight && gameProps.isRaining) {
+        // 0.5% de chance de acontecer (por frame)
+        if (Math.random() < 0.005) {
+            boss.redLightningTimer = 15; // Duração visual do raio
+            playBossRedLightning();
+            
+            // 0.5% de chance de acertar o player
+            if (Math.random() < 0.005 && !gameProps.isImmune && !gameProps.isPlayerShieldActive) {
+                onCollision();
+            }
         }
     }
 }
@@ -215,9 +235,9 @@ export function drawBoss() {
         if (p.type === 'freeze_orb') {
             ctx.fillStyle = '#ADD8E6'; // Light Blue
         } else {
-            ctx.fillStyle = p.type === 'player_shot' ? '#00FFFF' : '#FF00FF';
+            ctx.fillStyle = (p.type === 'player_shot' || p.type === 'player_shot_red') ? (p.type === 'player_shot_red' ? '#FF0000' : '#00FFFF') : '#FF00FF';
         }
-        if (p.type === 'player_shot') ctx.shadowColor = '#00FFFF';
+        if (p.type === 'player_shot' || p.type === 'player_shot_red') ctx.shadowColor = ctx.fillStyle;
         ctx.shadowBlur = p.type === 'player_shot' ? 15 : 0;
         ctx.beginPath();
         if (p.type === 'wave') {
@@ -228,6 +248,24 @@ export function drawBoss() {
         ctx.fill();
         ctx.shadowBlur = 0;
     });
+
+    // Desenhar Raio Vermelho (Ataque Especial)
+    if (boss.redLightningTimer > 0) {
+        boss.redLightningTimer--;
+        ctx.save();
+        // Flash Vermelho na tela
+        ctx.fillStyle = `rgba(255, 0, 0, ${Math.random() * 0.3 + 0.1})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Raio caindo (visual aleatório)
+        ctx.strokeStyle = '#FF0000';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(Math.random() * canvas.width, 0);
+        ctx.lineTo(Math.random() * canvas.width, canvas.height);
+        ctx.stroke();
+        ctx.restore();
+    }
 
     // Desenhar Boss (Fantasma Gigante)
     if (boss.hitTimer > 0) {

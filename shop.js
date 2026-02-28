@@ -4,14 +4,31 @@ import { saveShopData } from './storage.js';
 import { saveTotalCoins, getTotalCoins } from './storage.js';
 import { playBuy, playGlitch } from './audio.js';
 import { incrementMissionProgress } from './missions.js';
+import { checkSkinAchievements } from './achievements.js';
 
 const shopItems = [];
 const cardButton = {};
 const exitButton = {};
 const slowMoButton = {};
+const shopSvgSkins = {};
 let scrollY = 0;
 const itemHeight = 80;
 const totalContentHeight = (SKINS.length + 2) * itemHeight;
+
+function loadShopSvgSkins() {
+    const svgSkinData = SKINS.filter(s => s.isSvg);
+    svgSkinData.forEach(skin => {
+        const img = new Image();
+        img.src = skin.svgPath;
+        shopSvgSkins[skin.id] = {
+            image: img,
+            loaded: false
+        };
+        img.onload = () => {
+            shopSvgSkins[skin.id].loaded = true;
+        };
+    });
+}
 
 function setupShopLayout() {
     shopItems.length = 0;
@@ -33,7 +50,10 @@ function setupShopLayout() {
 }
 
 export function drawShop() {
-    if (shopItems.length === 0) setupShopLayout();
+    if (shopItems.length === 0) {
+        setupShopLayout();
+        loadShopSvgSkins();
+    }
 
     // Fundo
     ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
@@ -64,11 +84,22 @@ export function drawShop() {
         ctx.fillRect(item.rect.x, item.rect.y, item.rect.w - 20, item.rect.h);
         ctx.strokeStyle = isEquipped ? '#6A0DAD' : '#888888'; // Borda cinza, roxa se equipado
         ctx.strokeRect(item.rect.x, item.rect.y, item.rect.w - 20, item.rect.h);
-
-        ctx.fillStyle = item.color;
-        ctx.beginPath();
-        ctx.arc(item.rect.x + 40, item.rect.y + 35, 20, 0, Math.PI * 2);
-        ctx.fill();
+        
+        if (item.isSvg) {
+            const skinAsset = shopSvgSkins[item.id];
+            if (skinAsset && skinAsset.loaded) {
+                const image = skinAsset.image;
+                const aspectRatio = image.naturalWidth / image.naturalHeight;
+                const drawHeight = 40;
+                const drawWidth = drawHeight * aspectRatio;
+                ctx.drawImage(image, item.rect.x + 40 - drawWidth / 2, item.rect.y + 35 - drawHeight / 2, drawWidth, drawHeight);
+            }
+        } else {
+            ctx.fillStyle = item.color;
+            ctx.beginPath();
+            ctx.arc(item.rect.x + 40, item.rect.y + 35, 20, 0, Math.PI * 2);
+            ctx.fill();
+        }
 
         ctx.fillStyle = '#FFF';
         ctx.font = "20px Changa";
@@ -186,6 +217,7 @@ export function handleShopClick(x, y) {
                     playBuy();
                     playGlitch(); // Som de clique/feedback
                     incrementMissionProgress('buy_item');
+                    checkSkinAchievements();
                 }
             }
         }

@@ -14,6 +14,7 @@ const MISSION_TYPES = [
     { id: 'defeat_boss', text: 'Derrote o Boss', value: [1], suffix: 'vez', icon: '⚔️' },
     { id: 'use_shield', text: 'Use o Escudo', value: [3, 5, 10], suffix: 'vezes', icon: '🛡️' },
     { id: 'survive_time', text: 'Sobreviva por', value: [30, 60, 90], suffix: 'segundos', icon: '⏳' },
+    { id: 'play_skin_gatouiau', text: 'Jogue com a skin Gato Uiau', value: [1, 3], suffix: 'vezes', icon: '🐱' },
 ];
 
 const REWARDS = [50, 75, 100];
@@ -131,6 +132,9 @@ export function updateMissionProgress() {
                         break;
                     case 'secret_score':
                         mission.progress = Math.max(mission.progress, gameProps.score);
+                        break;
+                    case 'play_skin_gatouiau':
+                        if (gameProps.shopData.equippedSkin === 'gatouiau') mission.progress++;
                         break;
                     // 'buy_item' seria atualizado na loja
                 }

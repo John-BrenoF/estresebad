@@ -5,7 +5,7 @@ import { bird } from './bird.js';
 import { pipes, updatePipes, drawPipes } from './pipes.js';
 import { initMovingTube, updateMovingTube, drawMovingTube } from './movingTube.js';
 import { drawScore, drawWaitingScreen, drawGameOverScreen, drawStartScreen, handleMenuClick, attackButtonRect, shieldButtonRect, furyButtonRect } from './ui.js';
-import { playDie, playShield, playSlowMo, playBossMusic, stopBossMusic, playPlayerAttack, playBossDefeated, playPlayerShield, playNormalMusic, stopNormalMusic, resumeAudio, playGlitch } from './audio.js';
+import { playDie, playShield, playSlowMo, playBossMusic, stopBossMusic, playPlayerAttack, playPlayerRedShot, playBossDefeated, playPlayerShield, playNormalMusic, stopNormalMusic, resumeAudio, playGlitch } from './audio.js';
 import { createParticles, updateAndDrawParticles, clearParticles } from './particles.js';
 import { initBackground, updateAndDrawBackground } from './background.js';
 import { updateLightning, drawLightning, resetLightning } from './lightning.js';
@@ -13,7 +13,7 @@ import { resetRain, updateAndDrawRain } from './rain.js';
 import { updateAndDrawCoins, clearCoins } from './coins.js';
 import { drawShop, handleShopClick, handleShopScroll } from './shop.js';
 import { updateGhosts, drawGhosts, resetGhosts } from './ghost.js';
-import { checkAchievements, drawAchievements, loadAchievements } from './achievements.js';
+import { checkAchievements, drawAchievements, loadAchievements, checkBossAchievements } from './achievements.js';
 import { loadMissions, updateMissionProgress, drawMissionMap, handleMissionClick, handleMissionScroll } from './missions.js';
 import { initBoss, updateBoss, drawBoss, boss } from './boss.js';
 import { updateAndDrawFakeCones, resetFakeCones } from './fakeCones.js';
@@ -22,6 +22,10 @@ import { checkGeometryEvent, updateGeometryState, drawGeometryOverlay } from './
 let screenShake = { intensity: 0, duration: 0 };
 
 function gameOver() {
+    if (gameProps.isBossMode && !boss.isDefeated) {
+        gameProps.bossPlayerTookDamage = true;
+    }
+
     gameProps.isGameOver = true;
     gameProps.lastDeathTime = Date.now();
     gameProps.menuFadeInTimer = 30; // Ativa a animação de fade-in para a tela de game over
@@ -38,6 +42,10 @@ function gameOver() {
     }
 
     updateMissionProgress();
+    // Verifica conquistas de final de jogo (como a do boss)
+    if (gameProps.isBossMode) {
+        checkBossAchievements();
+    }
 }
 
 function startWaitingPeriod() {
@@ -377,12 +385,29 @@ function activateFury() {
 
 function playerAttack() {
     if (gameProps.isBossMode && gameProps.playerAttackCooldown <= 0) {
-        gameProps.playerAttackCooldown = 5 * 60; // 5 segundos
-        playPlayerAttack();
+        // Chance de 2% de ser um tiro vermelho (Crítico - Dobro de dano)
+        const isCritical = Math.random() < 0.02;
+        const type = isCritical ? 'player_shot_red' : 'player_shot';
+        const size = isCritical ? 15 : 12;
+
+        if (isCritical) {
+            playPlayerRedShot();
+        } else {
+            playPlayerAttack();
+        }
+
         boss.projectiles.push({
             x: bird.x + bird.width, y: bird.y + bird.height / 2,
-            vx: 8, vy: 0, size: 12, type: 'player_shot'
+            vx: 8, vy: 0, size: size, type: type
         });
+
+        gameProps.playerShotsFired++;
+        if (gameProps.playerShotsFired >= 2) {
+            gameProps.playerAttackCooldown = 5 * 60; // 5 segundos de recarga após 2 tiros
+            gameProps.playerShotsFired = 0;
+        } else {
+            gameProps.playerAttackCooldown = 15; // Pequeno delay (0.25s) entre os tiros do burst
+        }
     }
 }
 

@@ -1,7 +1,25 @@
 import { ctx, canvas, gameProps } from './state.js';
-import { playJump, playGlitch } from './audio.js';
+import { playJump, playGlitch, playCatJump } from './audio.js';
 import { SKINS } from './constants.js';
 import { createParticles, createGeometryTrail, createGlitchTrail } from './particles.js';
+
+const svgSkins = {};
+
+function loadSvgSkins() {
+    const svgSkinData = SKINS.filter(s => s.isSvg);
+    svgSkinData.forEach(skin => {
+        const img = new Image();
+        img.src = skin.svgPath;
+        svgSkins[skin.id] = {
+            image: img,
+            loaded: false
+        };
+        img.onload = () => {
+            svgSkins[skin.id].loaded = true;
+        };
+    });
+}
+loadSvgSkins();
 
 function drawCompleteBat(birdColor, wingFrame) {
     // 1. Desenhar Asas (Atrás do corpo)
@@ -143,6 +161,18 @@ function drawOriginalSkin(wingFrame) {
     ctx.restore();
 }
 
+function drawSvgSkin(skinId) {
+    const skinAsset = svgSkins[skinId];
+    if (skinAsset && skinAsset.loaded) {
+        const image = skinAsset.image;
+        const aspectRatio = image.naturalWidth / image.naturalHeight;
+        const drawWidth = 44;
+        const drawHeight = drawWidth / aspectRatio;
+        // Desenha a imagem centralizada na origem (que já foi transladada)
+        ctx.drawImage(image, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
+    }
+}
+
 export function drawBird(x, y, width, height, rotation, wingFrame) {
     // --- SOMBRA NO CHÃO ---
     // Desenha a sombra antes de qualquer transformação do pássaro
@@ -274,7 +304,9 @@ export function drawBird(x, y, width, height, rotation, wingFrame) {
     }
 
     // Desenho principal
-    if (currentSkin.isOriginal) {
+    if (currentSkin.isSvg) {
+        drawSvgSkin(currentSkin.id);
+    } else if (currentSkin.isOriginal) {
         drawOriginalSkin(wingFrame);
     } else {
         drawCompleteBat(birdColor, wingFrame);
@@ -402,6 +434,11 @@ export const bird = {
         } else {
             this.velocity = -this.jump;
         }
-        playJump();
+        
+        if (gameProps.shopData && gameProps.shopData.equippedSkin === 'gatouiau') {
+            playCatJump();
+        } else {
+            playJump();
+        }
     }
 };

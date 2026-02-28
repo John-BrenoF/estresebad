@@ -41,10 +41,12 @@ export const gameProps = {
     isMissionMapOpen: false,
     isBossMode: false,
     playerAttackCooldown: 0,
+    playerShotsFired: 0,
     isPlayerShieldActive: false,
     playerShieldCooldown: 0,
     isFrozen: false,
     freezeTimer: 0,
+    bossPlayerTookDamage: false,
     shieldUsageCount: 0,
     didDefeatBoss: false,
     furyCharge: 0,
@@ -92,10 +94,12 @@ export function resetGameProps() {
     gameProps.slowMoTimer = 0;
     gameProps.isMissionMapOpen = false;
     gameProps.playerAttackCooldown = 0;
+    gameProps.playerShotsFired = 0;
     gameProps.isPlayerShieldActive = false;
     gameProps.playerShieldCooldown = 0;
     gameProps.isFrozen = false;
     gameProps.freezeTimer = 0;
+    gameProps.bossPlayerTookDamage = false;
     gameProps.shieldUsageCount = 0;
     gameProps.didDefeatBoss = false;
     gameProps.furyCharge = 0;

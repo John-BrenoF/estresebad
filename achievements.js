@@ -1,11 +1,15 @@
 import { gameProps, ctx, canvas } from './state.js';
 import { saveTotalCoins } from './storage.js';
+import { SKINS } from './constants.js';
+import { playAchievementUnlock } from './audio.js';
 
 const ACHIEVEMENTS = [
     { id: 'score_10', name: 'Novato', score: 10, reward: 25, unlocked: false },
     { id: 'score_25', name: 'Explorador', score: 25, reward: 50, unlocked: false },
     { id: 'score_50', name: 'Veterano', score: 50, reward: 100, unlocked: false },
     { id: 'score_100', name: 'Mestre dos Céus', score: 100, reward: 250, unlocked: false },
+    { id: 'buy_5_skins', name: 'Colecionador', type: 'skins', count: 5, unlocked: false },
+    { id: 'boss_no_damage', name: 'Intocável', type: 'boss_no_damage', reward: 1000, unlocked: false },
 ];
 
 const notificationQueue = [];
@@ -33,6 +37,45 @@ export function checkAchievements() {
     });
 }
 
+export function checkSkinAchievements() {
+    const skinAchievements = ACHIEVEMENTS.filter(a => a.type === 'skins' && !a.unlocked);
+    if (skinAchievements.length === 0) return;
+
+    const purchasedSkinIds = gameProps.shopData.purchasedSkins;
+    const purchasedPaidSkins = purchasedSkinIds
+        .map(id => SKINS.find(s => s.id === id))
+        .filter(skin => skin && skin.price > 0);
+
+    skinAchievements.forEach(ach => {
+        if (purchasedPaidSkins.length >= ach.count) {
+            ach.unlocked = true;
+
+            let totalSpent = 0;
+            purchasedPaidSkins.slice(0, ach.count).forEach(skin => {
+                totalSpent += skin.price;
+            });
+
+            const reward = Math.floor(totalSpent * 0.5);
+            const notificationData = { ...ach, reward: reward };
+
+            saveTotalCoins(reward);
+            showNotification(notificationData);
+            saveAchievements();
+        }
+    });
+}
+
+export function checkBossAchievements() {
+    const ach = ACHIEVEMENTS.find(a => a.type === 'boss_no_damage' && !a.unlocked);
+    // Se a conquista existe, o boss foi derrotado e o jogador não tomou dano
+    if (ach && gameProps.didDefeatBoss && !gameProps.bossPlayerTookDamage) {
+        ach.unlocked = true;
+        saveTotalCoins(ach.reward);
+        showNotification(ach);
+        saveAchievements();
+    }
+}
+
 function saveAchievements() {
     const unlockedIds = ACHIEVEMENTS.filter(a => a.unlocked).map(a => a.id);
     localStorage.setItem('morcegoFlap_achievements', JSON.stringify(unlockedIds));
@@ -43,6 +86,7 @@ function showNotification(achievement) {
         ...achievement,
         timer: 180 // 3 segundos
     });
+    playAchievementUnlock();
 }
 
 export function drawAchievements() {

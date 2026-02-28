@@ -237,6 +237,24 @@ export function playPlayerAttack() {
     osc.stop(audioCtx.currentTime + 0.3);
 }
 
+export function playPlayerRedShot() {
+    resumeAudio();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.type = 'square'; // Onda quadrada para um som mais "pesado" e agressivo
+    gain.gain.setValueAtTime(0.4, audioCtx.currentTime); // Volume mais alto que o normal
+    
+    osc.frequency.setValueAtTime(1800, audioCtx.currentTime); // Começa bem agudo
+    osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.4); // Cai drasticamente (efeito "Pewww" potente)
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.4);
+}
+
 export function playBossDefeated() {
     resumeAudio();
     const osc1 = audioCtx.createOscillator();
@@ -310,6 +328,51 @@ export function playGlitch() {
     noise.stop(audioCtx.currentTime + 0.1);
 }
 
+export function playBossLaser() {
+    resumeAudio();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    osc.type = 'sawtooth';
+    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+    osc.frequency.setValueAtTime(1500, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+    osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.4);
+
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.4);
+}
+
+export function playBossRedLightning() {
+    resumeAudio();
+    const bufferSize = audioCtx.sampleRate * 0.6; // A bit longer than thunder
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    
+    for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 2); // Noise with decay
+    }
+
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = buffer;
+
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(800, audioCtx.currentTime);
+    filter.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.6);
+
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0.7, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.6);
+
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(audioCtx.destination);
+    noise.start();
+}
+
 export function playCloneSpawn() {
     resumeAudio();
     const osc = audioCtx.createOscillator();
@@ -327,4 +390,69 @@ export function playCloneSpawn() {
     
     osc.start();
     osc.stop(audioCtx.currentTime + 0.3);
+}
+
+const catMusic = new Audio('#cat #meme U Ii A I A u III A I cat.mp3');
+let catJumpTimeout = null;
+let lastCatJumpTime = 0;
+
+export function playCatJump() {
+    const now = Date.now();
+    const timeSinceLast = now - lastCatJumpTime;
+    lastCatJumpTime = now;
+
+    // Se o pulo for rápido (menos de 500ms do anterior)
+    if (timeSinceLast < 500) {
+        clearTimeout(catJumpTimeout);
+        catMusic.loop = true; // Ativa loop para continuar tocando
+        if (catMusic.paused) {
+            catMusic.play().catch(e => console.error("Erro ao tocar gato:", e));
+        }
+        
+        // Se parar de pular, para a música após um tempo
+        catJumpTimeout = setTimeout(() => {
+            catMusic.pause();
+            catMusic.currentTime = 0;
+            catMusic.loop = false;
+        }, 1500);
+    } else {
+        // Pulo isolado
+        catMusic.loop = false;
+        catMusic.currentTime = 0;
+        catMusic.play().catch(e => console.error("Erro ao tocar gato:", e));
+        
+        clearTimeout(catJumpTimeout);
+        // Para em 1.2s se for apenas um pulo
+        catJumpTimeout = setTimeout(() => {
+            catMusic.pause();
+            catMusic.currentTime = 0;
+        }, 1200);
+    }
+}
+
+export function playAchievementUnlock() {
+    resumeAudio();
+    const osc1 = audioCtx.createOscillator();
+    const osc2 = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc1.connect(gain);
+    osc2.connect(gain);
+    gain.connect(audioCtx.destination);
+    
+    osc1.type = 'sine';
+    osc2.type = 'triangle';
+    
+    osc1.frequency.setValueAtTime(800, audioCtx.currentTime);
+    osc1.frequency.exponentialRampToValueAtTime(1600, audioCtx.currentTime + 0.4);
+    
+    osc2.frequency.setValueAtTime(1200, audioCtx.currentTime);
+    osc2.frequency.exponentialRampToValueAtTime(2400, audioCtx.currentTime + 0.4);
+    
+    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+    
+    osc1.start();
+    osc2.start();
+    osc1.stop(audioCtx.currentTime + 0.5);
+    osc2.stop(audioCtx.currentTime + 0.5);
 }
