@@ -171,13 +171,13 @@ export function drawMissionMap() {
 
     // Título
     ctx.fillStyle = '#FFD700';
-    ctx.font = "bold 32px Arial";
+    ctx.font = "bold 32px Changa";
     ctx.textAlign = "center";
     ctx.fillText("MISSÕES DIÁRIAS", canvas.width / 2, 80);
     
     // Subtítulo
     ctx.fillStyle = '#AAA';
-    ctx.font = "16px Arial";
+    ctx.font = "16px Changa";
     ctx.fillText("Complete para ganhar moedas!", canvas.width / 2, 110);
 
     // Área de conteúdo com Clip para Scroll
@@ -216,13 +216,13 @@ export function drawMissionMap() {
         }
 
         // Ícone
-        ctx.font = "30px Arial";
+        ctx.font = "30px Changa";
         ctx.textAlign = "center";
         ctx.fillText(displayIcon || '🎯', x + 30, y + 45);
 
         // Texto da Missão
         ctx.fillStyle = '#FFF';
-        ctx.font = "bold 16px Arial";
+        ctx.font = "bold 16px Changa";
         ctx.textAlign = "left";
         ctx.fillText(displayText, x + 60, y + 30);
 
@@ -243,7 +243,7 @@ export function drawMissionMap() {
         ctx.fillRect(barX, barY, barWidth * progressPercent, barHeight); // Preenchimento
 
         // Texto de Status / Botão
-        ctx.font = "14px Arial";
+        ctx.font = "14px Changa";
         if (isLockedSecret) {
             ctx.fillStyle = '#AAA';
             ctx.fillText(`Progresso Oculto`, x + 60, y + 80);
@@ -278,7 +278,7 @@ export function drawMissionMap() {
 
     // Botão Voltar (Instrução)
     ctx.fillStyle = '#FFF';
-    ctx.font = "16px Arial";
+    ctx.font = "16px Changa";
     ctx.textAlign = "center";
     ctx.fillText("Clique nas bordas para voltar", canvas.width / 2, canvas.height - 20);
 }

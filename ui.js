@@ -9,7 +9,7 @@ export function drawScore() {
     ctx.fillStyle = '#FFF';
     ctx.lineWidth = 2;
     ctx.strokeStyle = '#000';
-    ctx.font = "35px Arial";
+    ctx.font = "35px Changa";
     ctx.fillText(gameProps.score, canvas.width / 2 - 10, 50);
     ctx.strokeText(gameProps.score, canvas.width / 2 - 10, 50);
 
@@ -20,10 +20,10 @@ export function drawScore() {
     ctx.lineWidth = 2;
     ctx.strokeRect(canvas.width - 40, canvas.height - 40, 30, 30);
     ctx.fillStyle = '#FFF';
-    ctx.font = '20px Arial';
+    ctx.font = '20px Changa';
     ctx.fillText('X', canvas.width - 33, canvas.height - 17);
     
-    ctx.font = "12px Arial";
+    ctx.font = "12px Changa";
     ctx.fillText("Vel: " + gameProps.gameSpeed.toFixed(1), 10, 20);
 
     // Desenhar Moedas
@@ -32,7 +32,7 @@ export function drawScore() {
 
     // UI da Carta de Imunidade
     if (gameProps.shopData) {
-        ctx.font = "14px Arial";
+        ctx.font = "14px Changa";
         if (gameProps.isHardcoreMode) {
             ctx.fillStyle = '#FF4444';
             ctx.fillText('HARDCORE', canvas.width - 120, 20);
@@ -76,6 +76,7 @@ export function drawScore() {
         // UI do Player Attack (somente no modo boss)
         if (gameProps.isBossMode) {
             ctx.fillStyle = '#FFF';
+            ctx.font = "14px Changa";
             ctx.fillText(`Ataque [F]`, canvas.width - 120, 140);
             if (gameProps.playerAttackCooldown > 0) {
                 ctx.fillStyle = '#FF6B6B';
@@ -91,7 +92,7 @@ export function drawScore() {
             ctx.strokeRect(attackButtonRect.x, attackButtonRect.y, attackButtonRect.w, attackButtonRect.h);
             
             ctx.fillStyle = '#FFF';
-            ctx.font = "40px Arial";
+            ctx.font = "40px Changa";
             ctx.textAlign = "center";
             ctx.fillText("⚔️", attackButtonRect.x + attackButtonRect.w/2, attackButtonRect.y + 50);
             ctx.textAlign = "left";
@@ -104,7 +105,7 @@ export function drawScore() {
             ctx.strokeRect(shieldButtonRect.x, shieldButtonRect.y, shieldButtonRect.w, shieldButtonRect.h);
             
             ctx.fillStyle = '#FFF';
-            ctx.font = "40px Arial";
+            ctx.font = "40px Changa";
             ctx.textAlign = "center";
             ctx.fillText("🛡️", shieldButtonRect.x + shieldButtonRect.w/2, shieldButtonRect.y + 50);
             ctx.textAlign = "left";
@@ -112,13 +113,13 @@ export function drawScore() {
             // Cooldown do Escudo
             if (gameProps.playerShieldCooldown > 0) {
                 ctx.fillStyle = '#FFF';
-                ctx.font = "20px Arial";
+                ctx.font = "20px Changa";
                 ctx.fillText((gameProps.playerShieldCooldown / 60).toFixed(1), shieldButtonRect.x + 25, shieldButtonRect.y + 40);
             }
         } else {
             // UI da Fúria (Modo Normal)
             ctx.fillStyle = '#FFF';
-            ctx.font = "14px Arial";
+            ctx.font = "14px Changa";
             ctx.fillText(`Fúria [Z]: ${gameProps.furyCharge}/5`, canvas.width - 120, 140);
 
             // Botão de Fúria
@@ -130,34 +131,12 @@ export function drawScore() {
             ctx.strokeRect(furyButtonRect.x, furyButtonRect.y, furyButtonRect.w, furyButtonRect.h);
             
             ctx.fillStyle = '#FFF';
-            ctx.font = "40px Arial";
+            ctx.font = "40px Changa";
             ctx.textAlign = "center";
             ctx.fillText("🔥", furyButtonRect.x + furyButtonRect.w/2, furyButtonRect.y + 50);
             ctx.textAlign = "left";
         }
     }
-}
-
-export function drawHighScores() {
-    const highScores = getHighScores();
-    
-    ctx.fillStyle = '#FFD700';
-    ctx.font = "20px Arial";
-    ctx.textAlign = "center";
-    ctx.fillText("🏆 RANKING", canvas.width / 2, canvas.height / 2 - 60);
-    
-    ctx.font = "16px Arial";
-    ctx.fillStyle = '#FFF';
-    
-    if (highScores.length === 0) {
-        ctx.fillText("Sem pontuações ainda!", canvas.width / 2, canvas.height / 2 - 30);
-    } else {
-        highScores.forEach((s, index) => {
-            ctx.fillText(`${index + 1}º - ${s.score} pts`, canvas.width / 2, canvas.height / 2 - 30 + (index * 25));
-        });
-    }
-    
-    ctx.textAlign = "left";
 }
 
 export function drawWaitingScreen() {
@@ -169,21 +148,21 @@ export function drawWaitingScreen() {
     const displayTime = remaining.toFixed(1);
     
     ctx.fillStyle = '#FF6B6B';
-    ctx.font = "bold 28px Arial";
+    ctx.font = "bold 28px Changa";
     ctx.textAlign = "center";
     ctx.fillText("⏰ AGUARDE!", canvas.width / 2, canvas.height / 2 - 60);
     
     ctx.fillStyle = '#4ECDC4';
-    ctx.font = "bold 60px Arial";
+    ctx.font = "bold 60px Changa";
     ctx.fillText(displayTime + "s", canvas.width / 2, canvas.height / 2 + 10);
     
     ctx.fillStyle = '#FFF';
-    ctx.font = "16px Arial";
+    ctx.font = "16px Changa";
     ctx.fillText("O jogo iniciará automaticamente", canvas.width / 2, canvas.height / 2 + 50);
     ctx.fillText("após a contagem regressiva.", canvas.width / 2, canvas.height / 2 + 75);
     
     ctx.fillStyle = '#FFD700';
-    ctx.font = "14px Arial";
+    ctx.font = "14px Changa";
     let timeText = "";
     if (gameProps.selectedDelay === 0.2) timeText = "Rápido! (0.2s)";
     else if (gameProps.selectedDelay === 1) timeText = "Curto (1s)";
@@ -198,36 +177,45 @@ export function drawGameOverScreen() {
     ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
+    let currentY = 200;
+
     ctx.fillStyle = '#FF4444';
-    ctx.font = "35px Arial";
+    ctx.font = "bold 40px Changa";
     ctx.textAlign = "center";
-    ctx.fillText("FIM DE JOGO!", canvas.width / 2, canvas.height / 2 - 100);
+    ctx.fillText("FIM DE JOGO!", canvas.width / 2, currentY);
     
+    currentY += 80;
+
     ctx.fillStyle = '#FFF';
-    ctx.font = "25px Arial";
-    ctx.fillText("Pontuação: " + gameProps.score, canvas.width / 2, canvas.height / 2 - 55);
-
-    ctx.fillStyle = '#FFD700';
-    ctx.font = "20px Arial";
-    ctx.fillText("💰 Moedas: " + (gameProps.totalCoins + gameProps.currentCoins), canvas.width / 2, canvas.height / 2 - 80);
-
-    ctx.fillStyle = '#FFFF00';
-    ctx.font = "18px Arial";
-    ctx.fillText("⚡ Raios Sobrevividos: " + gameProps.lightningSurvived, canvas.width / 2, canvas.height / 2 - 25);
+    ctx.font = "28px Changa";
+    ctx.fillText("Pontuação: " + gameProps.score, canvas.width / 2, currentY);
     
     if (gameProps.isNewHighScore) {
+        currentY += 40;
         ctx.fillStyle = '#FFD700';
-        ctx.font = "bold 22px Arial";
-        ctx.fillText("⭐ NOVO RECORDE! ⭐", canvas.width / 2, canvas.height / 2 - 20);
+        ctx.font = "bold 26px Changa";
+        ctx.fillText("⭐ NOVO RECORDE! ⭐", canvas.width / 2, currentY);
     }
+
+    currentY += 60;
+
+    // Estatísticas secundárias
+    ctx.fillStyle = '#FFD700';
+    ctx.font = "22px Changa";
+    ctx.fillText("💰 Moedas Coletadas: " + gameProps.currentCoins, canvas.width / 2, currentY);
     
-    drawHighScores();
+    currentY += 35;
     
+    ctx.fillStyle = '#FFFF00';
+    ctx.font = "22px Changa";
+    ctx.fillText("⚡ Raios Sobrevividos: " + gameProps.lightningSurvived, canvas.width / 2, currentY);
+
+    // Instruções na parte inferior
     ctx.fillStyle = '#70c5ce';
-    ctx.font = "18px Arial";
-    ctx.fillText("Clique ou Espaço para sortear tempo", canvas.width / 2, canvas.height - 60);
-    ctx.fillText("e iniciar nova partida", canvas.width / 2, canvas.height - 35);
-    ctx.fillText("Pressione 'L' para ir à Loja", canvas.width / 2, canvas.height - 10);
+    ctx.font = "18px Changa";
+    ctx.fillText("Clique ou Espaço para sortear tempo", canvas.width / 2, canvas.height - 80);
+    ctx.fillText("e iniciar nova partida", canvas.width / 2, canvas.height - 55);
+    ctx.fillText("Pressione 'L' para ir à Loja", canvas.width / 2, canvas.height - 30);
     
     ctx.textAlign = "left";
 }
@@ -248,44 +236,46 @@ export function drawStartScreen() {
     ctx.translate(canvas.width / 2, canvas.height / 2 - 120);
     ctx.scale(scale, scale);
     ctx.fillStyle = '#FFD700';
-    ctx.font = "bold 45px Arial";
+    ctx.font = "bold 45px Changa";
     ctx.textAlign = "center";
     ctx.fillText("MORCEGO FLAP", 0, 0);
     ctx.restore();
     
+    ctx.textAlign = "center"; // Centraliza o texto para todos os botões
+
     // Botão Iniciar
     ctx.fillStyle = '#2E8B57';
     ctx.fillRect(startButton.x, startButton.y, startButton.w, startButton.h);
     ctx.fillStyle = '#FFF';
-    ctx.font = "30px Arial";
+    ctx.font = "30px Changa";
     ctx.fillText("Iniciar", canvas.width / 2, startButton.y + 35);
 
     // Botão Hardcore
     ctx.fillStyle = '#8B0000';
     ctx.fillRect(hardcoreButton.x, hardcoreButton.y, hardcoreButton.w, hardcoreButton.h);
     ctx.fillStyle = '#FFF';
-    ctx.font = "30px Arial";
+    ctx.font = "30px Changa";
     ctx.fillText("Hardcore", canvas.width / 2, hardcoreButton.y + 36);
 
     // Botão Boss Rush
     ctx.fillStyle = '#800080';
     ctx.fillRect(bossButton.x, bossButton.y, bossButton.w, bossButton.h);
     ctx.fillStyle = '#FFF';
-    ctx.font = "30px Arial";
+    ctx.font = "30px Changa";
     ctx.fillText("Boss Rush", canvas.width / 2, bossButton.y + 36);
 
     // Botão Loja
     ctx.fillStyle = '#4682B4';
     ctx.fillRect(shopButton.x, shopButton.y, shopButton.w, shopButton.h);
     ctx.fillStyle = '#FFF';
-    ctx.font = "24px Arial";
+    ctx.font = "24px Changa";
     ctx.fillText("Loja", shopButton.x + shopButton.w / 2, shopButton.y + 34);
 
     // Botão Missões
     ctx.fillStyle = '#663399';
     ctx.fillRect(missionsButton.x, missionsButton.y, missionsButton.w, missionsButton.h);
     ctx.fillStyle = '#FFF';
-    ctx.font = "24px Arial";
+    ctx.font = "24px Changa";
     ctx.fillText("Missões", missionsButton.x + missionsButton.w / 2, missionsButton.y + 34);
 
     ctx.textAlign = "left";

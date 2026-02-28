@@ -41,12 +41,12 @@ export function drawShop() {
 
     // Título
     ctx.fillStyle = '#FFD700';
-    ctx.font = "bold 40px Arial";
+    ctx.font = "bold 40px Changa";
     ctx.textAlign = "center";
     ctx.fillText("LOJA", canvas.width / 2, 80);
 
     // Moedas
-    ctx.font = "24px Arial";
+    ctx.font = "24px Changa";
     ctx.fillText(`💰 ${gameProps.totalCoins}`, canvas.width / 2, 120);
 
     ctx.save();
@@ -71,11 +71,11 @@ export function drawShop() {
         ctx.fill();
 
         ctx.fillStyle = '#FFF';
-        ctx.font = "20px Arial";
+        ctx.font = "20px Changa";
         ctx.textAlign = "left";
         ctx.fillText(item.name, item.rect.x + 80, item.rect.y + 30);
 
-        ctx.font = "16px Arial";
+        ctx.font = "16px Changa";
         if (isOwned) {
             ctx.fillStyle = isEquipped ? '#00BFFF' : '#00FF00';
             ctx.fillText(isEquipped ? "Equipado" : "Equipar", item.rect.x + 80, item.rect.y + 55);
@@ -92,10 +92,10 @@ export function drawShop() {
     ctx.strokeRect(cardButton.rect.x, cardButton.rect.y, cardButton.rect.w - 20, cardButton.rect.h);
     ctx.fillStyle = '#FFF';
     ctx.textAlign = "left";
-    ctx.font = "20px Arial";
+    ctx.font = "20px Changa";
     ctx.fillText(`Carta de Imunidade [E] (x${gameProps.shopData.immunityCards})`, cardButton.rect.x + 20, cardButton.rect.y + 30);
     ctx.fillStyle = gameProps.totalCoins >= CARD_PRICE ? '#FFD700' : '#FF6B6B';
-    ctx.font = "16px Arial";
+    ctx.font = "16px Changa";
     ctx.fillText(`Comprar 1 por: ${CARD_PRICE} 💰`, cardButton.rect.x + 20, cardButton.rect.y + 55);
 
     // Botão de Comprar Slow-Mo
@@ -105,10 +105,10 @@ export function drawShop() {
     ctx.strokeRect(slowMoButton.rect.x, slowMoButton.rect.y, slowMoButton.rect.w - 20, slowMoButton.rect.h);
     ctx.fillStyle = '#FFF';
     ctx.textAlign = "left";
-    ctx.font = "20px Arial";
+    ctx.font = "20px Changa";
     ctx.fillText(`Carga de Slow-Mo [T] (x${gameProps.shopData.slowMoCharges})`, slowMoButton.rect.x + 20, slowMoButton.rect.y + 30);
     ctx.fillStyle = gameProps.totalCoins >= SLOWMO_PRICE ? '#FFD700' : '#FF6B6B';
-    ctx.font = "16px Arial";
+    ctx.font = "16px Changa";
     ctx.fillText(`Comprar 1 por: ${SLOWMO_PRICE} 💰`, slowMoButton.rect.x + 20, slowMoButton.rect.y + 55);
 
     ctx.restore();
@@ -126,7 +126,7 @@ export function drawShop() {
     ctx.fillStyle = '#AA0000';
     ctx.fillRect(exitButton.rect.x, exitButton.rect.y, exitButton.rect.w, exitButton.rect.h);
     ctx.fillStyle = '#FFF';
-    ctx.font = "24px Arial";
+    ctx.font = "24px Changa";
     ctx.textAlign = "center";
     ctx.fillText("Sair", canvas.width / 2, exitButton.rect.y + 33);
 }

@@ -59,7 +59,7 @@ export function updateAndDrawCoins(bird) {
             ctx.lineWidth = 2;
             ctx.stroke();
             ctx.fillStyle = '#DAA520';
-            ctx.font = "bold 16px Arial";
+            ctx.font = "bold 16px Changa";
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
             ctx.fillText("$", 0, 1);

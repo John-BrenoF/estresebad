@@ -58,16 +58,16 @@ export function drawGeometryOverlay() {
         // Efeito de piscar
         if (Math.floor(Date.now() / 100) % 2 === 0) {
             ctx.fillStyle = '#FF00FF';
-            ctx.font = "bold 40px Arial";
+            ctx.font = "bold 40px Changa";
             ctx.textAlign = "center";
             ctx.fillText("⚠️ WARNING ⚠️", canvas.width / 2, canvas.height / 2 - 50);
         }
 
         ctx.fillStyle = '#00FFFF';
-        ctx.font = "bold 30px Arial";
+        ctx.font = "bold 30px Changa";
         ctx.textAlign = "center";
         ctx.fillText("GEOMETRY MODE", canvas.width / 2, canvas.height / 2);
-        ctx.font = "20px Arial";
+        ctx.font = "20px Changa";
         ctx.fillStyle = '#FFF';
         ctx.fillText("Prepare-se!", canvas.width / 2, canvas.height / 2 + 40);
         ctx.restore();

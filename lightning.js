@@ -93,7 +93,7 @@ export function drawLightning() {
         
         // Ícone de alerta
         ctx.fillStyle = '#FFFF00';
-        ctx.font = '30px Arial';
+        ctx.font = '30px Changa';
         ctx.fillText('⚡', lightning.x - 15, 50);
         
     } else if (lightning.phase === 'strike') {

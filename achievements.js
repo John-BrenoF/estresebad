@@ -61,11 +61,11 @@ export function drawAchievements() {
     ctx.strokeRect(canvas.width / 2 - 150, 80, 300, 60);
 
     ctx.fillStyle = '#FFD700';
-    ctx.font = 'bold 18px Arial';
+    ctx.font = 'bold 18px Changa';
     ctx.textAlign = 'center';
     ctx.fillText('🏆 Conquista Desbloqueada!', canvas.width / 2, 105);
     ctx.fillStyle = '#FFF';
-    ctx.font = '16px Arial';
+    ctx.font = '16px Changa';
     ctx.fillText(`${notification.name} (+${notification.reward} 💰)`, canvas.width / 2, 130);
     ctx.restore();
 
