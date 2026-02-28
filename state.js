@@ -53,7 +53,13 @@ export const gameProps = {
     isGeometryMode: false,
     geometryTimer: 0,
     isGeometryCutscene: false,
-    pulseScale: 1.0
+    pulseScale: 1.0,
+    deviceOffsetX: 0,
+    deviceOffsetY: 0,
+    timeOfDay: 0.0, // 0 = meia-noite, 0.5 = meio-dia
+    dayNightCycleSpeed: 0.0001,
+    hasAurora: false,
+    auroraChecked: false
 };
 
 export function resetGameProps() {
@@ -99,5 +105,9 @@ export function resetGameProps() {
     gameProps.transitionFlash = 0; // 0 a 1 (opacidade do flash branco)
     gameProps.rgbSplitTimer = 0; // Timer para o efeito de distorção
     gameProps.pulseScale = 1.0;
+    gameProps.deviceOffsetX = 0;
+    gameProps.deviceOffsetY = 0;
+    // O ciclo de dia/noite continua entre as partidas para ser mais natural
+    // gameProps.timeOfDay = 0.0; 
     // isBossMode é definido no menu, não reseta aqui para false
 }

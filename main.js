@@ -168,6 +168,10 @@ function loop() {
             }
         }
 
+        // Atualiza o ciclo de dia/noite
+        gameProps.timeOfDay += gameProps.dayNightCycleSpeed;
+        if (gameProps.timeOfDay > 1) gameProps.timeOfDay -= 1;
+
         // Atualiza timers do ímã
         if (gameProps.magnetCooldownTimer > 0) gameProps.magnetCooldownTimer--;
         if (gameProps.magnetTimer > 0) {
@@ -526,6 +530,18 @@ canvas.addEventListener('touchmove', (e) => {
         touchStartY = currentY;
     }
 }, { passive: false });
+
+// Efeito de Paralaxe com Giroscópio (Mobile)
+window.addEventListener('deviceorientation', (e) => {
+    if (e.gamma !== null && e.beta !== null) {
+        // Limita o tilt para evitar movimentos exagerados
+        const tiltX = Math.min(Math.max(e.gamma, -30), 30); 
+        const tiltY = Math.min(Math.max(e.beta, -30), 30);
+        
+        gameProps.deviceOffsetX = tiltX; 
+        gameProps.deviceOffsetY = tiltY;
+    }
+});
 
 // Iniciar
 initMovingTube();

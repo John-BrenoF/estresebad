@@ -2,10 +2,43 @@ import { ctx, canvas, gameProps } from './state.js';
 
 const stars = [];
 const buildings = [];
+const clouds = [];
+const shootingStars = [];
+const fireflies = [];
+
+function lerpColor(color1, color2, factor) {
+    const r1 = parseInt(color1.substring(1, 3), 16);
+    const g1 = parseInt(color1.substring(3, 5), 16);
+    const b1 = parseInt(color1.substring(5, 7), 16);
+
+    const r2 = parseInt(color2.substring(1, 3), 16);
+    const g2 = parseInt(color2.substring(3, 5), 16);
+    const b2 = parseInt(color2.substring(5, 7), 16);
+
+    const r = Math.round(r1 + (r2 - r1) * factor);
+    const g = Math.round(g1 + (g2 - g1) * factor);
+    const b = Math.round(b1 + (b2 - b1) * factor);
+
+    // Garante que os valores fiquem entre 0 e 255 e converte para hexadecimal
+    const toHex = (c) => ('0' + Math.min(255, Math.max(0, c)).toString(16)).slice(-2);
+
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+// Cores para cada fase do dia
+const DAY_CYCLE_COLORS = {
+    night: { top: '#0f2027', bottom: '#203a43' },
+    sunrise: { top: '#ff7e5f', bottom: '#feb47b' },
+    day: { top: '#70c5ce', bottom: '#a1e2e8' },
+    sunset: { top: '#ff7e5f', bottom: '#feb47b' } // Reutiliza as cores do nascer do sol
+};
 
 export function initBackground() {
     stars.length = 0;
     buildings.length = 0;
+    clouds.length = 0;
+    shootingStars.length = 0;
+    fireflies.length = 0;
 
     // Criar estrelas
     for (let i = 0; i < 60; i++) {
@@ -22,14 +55,48 @@ export function initBackground() {
     while (currentX < canvas.width * 2) {
         const width = 40 + Math.random() * 60;
         const height = 50 + Math.random() * 150;
+        const isLighter = Math.random() > 0.8;
         buildings.push({
             x: currentX,
             y: canvas.height - height,
             width: width,
             height: height,
-            color: Math.random() > 0.8 ? '#1a1a1a' : '#222'
+            color: isLighter ? '#222' : '#1a1a1a', // Cor inicial, será atualizada
+            isLighter: isLighter
         });
         currentX += width;
+    }
+
+    // Criar nuvens
+    for (let i = 0; i < 7; i++) { // Generate 7 clouds
+        const cloud = {
+            x: Math.random() * canvas.width * 2,
+            y: 50 + Math.random() * 150,
+            speedFactor: (Math.random() * 0.1) + 0.02, // Slower speed
+            parts: []
+        };
+        const numParts = 3 + Math.floor(Math.random() * 4);
+        let currentPartX = 0;
+        for (let j = 0; j < numParts; j++) {
+            const size = 20 + Math.random() * 25;
+            cloud.parts.push({
+                dx: currentPartX,
+                dy: (Math.random() * 20) - 10,
+                size: size
+            });
+            currentPartX += size * 0.7; // Overlap them
+        }
+        clouds.push(cloud);
+    }
+
+    // Criar vaga-lumes
+    for (let i = 0; i < 20; i++) {
+        fireflies.push({
+            x: Math.random() * canvas.width,
+            y: canvas.height - Math.random() * 150,
+            angle: Math.random() * Math.PI * 2,
+            speed: 0.5 + Math.random() * 0.5
+        });
     }
 }
 
@@ -75,30 +142,376 @@ export function updateAndDrawBackground() {
     }
     // ----------------------------------------
 
-    // Fundo do céu (gradiente noturno)
+    // --- CICLO DE DIA E NOITE ---
+    const time = gameProps.timeOfDay;
+    let topColor, bottomColor;
+
+    if (time < 0.25) { // Noite -> Nascer do sol
+        const factor = time / 0.25;
+        topColor = lerpColor(DAY_CYCLE_COLORS.night.top, DAY_CYCLE_COLORS.sunrise.top, factor);
+        bottomColor = lerpColor(DAY_CYCLE_COLORS.night.bottom, DAY_CYCLE_COLORS.sunrise.bottom, factor);
+    } else if (time < 0.5) { // Nascer do sol -> Dia
+        const factor = (time - 0.25) / 0.25;
+        topColor = lerpColor(DAY_CYCLE_COLORS.sunrise.top, DAY_CYCLE_COLORS.day.top, factor);
+        bottomColor = lerpColor(DAY_CYCLE_COLORS.sunrise.bottom, DAY_CYCLE_COLORS.day.bottom, factor);
+    } else if (time < 0.75) { // Dia -> Pôr do sol
+        const factor = (time - 0.5) / 0.25;
+        topColor = lerpColor(DAY_CYCLE_COLORS.day.top, DAY_CYCLE_COLORS.sunset.top, factor);
+        bottomColor = lerpColor(DAY_CYCLE_COLORS.day.bottom, DAY_CYCLE_COLORS.sunset.bottom, factor);
+    } else { // Pôr do sol -> Noite
+        const factor = (time - 0.75) / 0.25;
+        topColor = lerpColor(DAY_CYCLE_COLORS.sunset.top, DAY_CYCLE_COLORS.night.top, factor);
+        bottomColor = lerpColor(DAY_CYCLE_COLORS.sunset.bottom, DAY_CYCLE_COLORS.night.bottom, factor);
+    }
+
     const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    gradient.addColorStop(0, '#0f2027');
-    gradient.addColorStop(1, '#203a43');
+    gradient.addColorStop(0, topColor);
+    gradient.addColorStop(1, bottomColor);
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Desenhar e mover estrelas
-    ctx.fillStyle = '#FFF';
-    stars.forEach(star => {
-        if (!gameProps.isGameOver) {
-            star.x -= gameProps.gameSpeed * star.speedFactor;
-            if (star.x < 0) star.x = canvas.width;
+    const pX = gameProps.deviceOffsetX || 0;
+    const pY = gameProps.deviceOffsetY || 0;
+
+    // --- REFLEXOS NA ÁGUA ---
+    const waterY = canvas.height - 60; // Nível da água
+    
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, waterY, canvas.width, canvas.height - waterY);
+    ctx.clip();
+    
+    // Fundo da água (reflexo do céu escurecido)
+    ctx.fillStyle = bottomColor; 
+    ctx.globalAlpha = 0.5;
+    ctx.fillRect(0, waterY, canvas.width, canvas.height - waterY);
+    ctx.globalAlpha = 1.0;
+    
+    // Espelhamento vertical para os reflexos
+    ctx.translate(0, waterY * 2);
+    ctx.scale(1, -1);
+    
+    // Reflexo da Lua
+    let moonTimeReflect = time;
+    if (moonTimeReflect < 0.3) moonTimeReflect += 1.0;
+    if (moonTimeReflect > 0.7 && moonTimeReflect < 1.3) {
+        const moonProgress = (moonTimeReflect - 0.7) / 0.6;
+        const moonX = moonProgress * (canvas.width + 100) - 50;
+        const moonY = canvas.height - 150 - Math.sin(moonProgress * Math.PI) * (canvas.height - 300);
+        
+        ctx.save();
+        ctx.translate(moonX + pX * 0.1, moonY + pY * 0.1);
+        
+        // Efeito de "Estrada de Luz" na água (Shimmering Path)
+        const shimmerTime = Date.now() / 200;
+        
+        // Brilho base
+        ctx.shadowColor = '#FFFFFF';
+        ctx.shadowBlur = 30;
+        ctx.fillStyle = 'rgba(244, 246, 240, 0.2)';
+        
+        // Desenha várias fatias para simular o reflexo quebrando nas ondas
+        for (let i = 0; i < 12; i++) {
+            const wavePhase = shimmerTime + i * 0.5;
+            const xShift = Math.sin(wavePhase) * (5 + i); // Ondulação horizontal
+            const width = 35 - i * 1.5 + Math.cos(wavePhase) * 5; // Largura variável
+            const height = 6 + i * 0.5;
+            const yPos = - (i * 15); // Y negativo desce na tela (devido ao scale -1)
+            
+            ctx.beginPath();
+            ctx.ellipse(xShift, yPos, width, height, 0, 0, Math.PI * 2);
+            ctx.fill();
         }
-        ctx.fillRect(star.x, star.y, star.size, star.size);
+        
+        ctx.restore();
+    }
+    
+    // Reflexo dos Prédios
+    buildings.forEach(b => {
+        if (b.color) {
+            ctx.fillStyle = b.color;
+            ctx.globalAlpha = 0.2;
+            ctx.fillRect(b.x + pX, b.y + pY, b.width + 1, b.height);
+        }
     });
+    
+    ctx.restore();
+    
+    // Superfície da água (brilho sutil)
+    ctx.fillStyle = 'rgba(100, 150, 255, 0.1)';
+    ctx.fillRect(0, waterY, canvas.width, canvas.height - waterY);
+
+    // Ondas na superfície
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+    ctx.lineWidth = 2;
+    const waveTime = Date.now() / 800;
+    for(let i=0; i<4; i++) {
+        const yWave = waterY + 15 + i * 12;
+        ctx.beginPath();
+        for(let x=0; x<canvas.width; x+=20) {
+            const yOffset = Math.sin(x * 0.02 + waveTime + i) * 3;
+            ctx.lineTo(x, yWave + yOffset);
+        }
+        ctx.stroke();
+    }
+    ctx.restore();
+
+    // --- LÓGICA DA AURORA ---
+    // Sorteia se vai ter aurora quando anoitece (time > 0.7)
+    if (time > 0.7 && time < 0.75 && !gameProps.auroraChecked) {
+        gameProps.hasAurora = Math.random() < 0.123; // 12.3% de chance
+        gameProps.auroraChecked = true;
+    }
+    // Reseta durante o dia
+    if (time > 0.25 && time < 0.7) {
+        gameProps.auroraChecked = false;
+        gameProps.hasAurora = false;
+    }
+
+    // Desenhar estrelas (apenas à noite)
+    let starAlpha = 0;
+    if (time > 0.75) starAlpha = (time - 0.75) / 0.25; // Fade in
+    else if (time < 0.25) starAlpha = 1 - (time / 0.25); // Fade out
+
+    if (starAlpha > 0) {
+        ctx.fillStyle = `rgba(255, 255, 255, ${starAlpha})`;
+        stars.forEach(star => {
+            if (!gameProps.isGameOver) {
+                star.x -= gameProps.gameSpeed * star.speedFactor;
+                if (star.x < 0) star.x = canvas.width;
+            }
+            ctx.fillRect(star.x + (pX * 0.5), star.y + (pY * 0.5), star.size, star.size);
+        });
+    }
+
+    // Desenhar Aurora Boreal
+    if (gameProps.hasAurora && (time > 0.7 || time < 0.3)) {
+        let auroraAlpha = 0;
+        // Fade in/out suave
+        if (time > 0.7) auroraAlpha = (time - 0.7) / 0.2;
+        else if (time < 0.3) auroraAlpha = 1 - (time / 0.3);
+        if (auroraAlpha > 1) auroraAlpha = 1;
+
+        ctx.save();
+        ctx.globalAlpha = auroraAlpha * 0.6;
+        ctx.globalCompositeOperation = 'screen'; // Brilho suave
+
+        const t = Date.now() / 3000;
+
+        // Camada 1: Verde
+        const gradient1 = ctx.createLinearGradient(0, 0, 0, canvas.height / 2);
+        gradient1.addColorStop(0, 'rgba(0, 255, 128, 0)');
+        gradient1.addColorStop(0.5, 'rgba(0, 255, 128, 0.4)');
+        gradient1.addColorStop(1, 'rgba(0, 255, 128, 0)');
+
+        ctx.fillStyle = gradient1;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        for (let x = 0; x <= canvas.width; x += 20) {
+            const y = Math.sin(x * 0.005 + t) * 40 + Math.sin(x * 0.01 - t * 1.5) * 20 + 100;
+            ctx.lineTo(x, y);
+        }
+        ctx.lineTo(canvas.width, 0);
+        ctx.fill();
+
+        // Camada 2: Roxo/Azul (mais sutil)
+        const gradient2 = ctx.createLinearGradient(0, 0, 0, canvas.height / 2);
+        gradient2.addColorStop(0, 'rgba(100, 0, 255, 0)');
+        gradient2.addColorStop(0.6, 'rgba(100, 0, 255, 0.2)');
+        gradient2.addColorStop(1, 'rgba(100, 0, 255, 0)');
+
+        ctx.fillStyle = gradient2;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        for (let x = 0; x <= canvas.width; x += 20) {
+            const y = Math.sin(x * 0.008 - t) * 50 + Math.sin(x * 0.02 + t) * 20 + 80;
+            ctx.lineTo(x, y);
+        }
+        ctx.lineTo(canvas.width, 0);
+        ctx.fill();
+
+        ctx.restore();
+    }
+
+    // --- ESTRELAS CADENTES ---
+    // Apenas à noite (time > 0.7 ou time < 0.25)
+    if (time > 0.7 || time < 0.25) {
+        if (Math.random() < 0.008) { // 0.8% de chance por frame
+            shootingStars.push({
+                x: Math.random() * canvas.width + 200, // Começa um pouco à direita ou no meio
+                y: Math.random() * (canvas.height / 2),
+                length: Math.random() * 80 + 40,
+                speed: Math.random() * 15 + 15
+            });
+        }
+    }
+
+    ctx.save();
+    ctx.strokeStyle = '#FFFFFF';
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+    for (let i = 0; i < shootingStars.length; i++) {
+        let s = shootingStars[i];
+        s.x -= s.speed;
+        s.y += s.speed * 0.6; // Move na diagonal (esquerda-baixo)
+
+        ctx.globalAlpha = Math.max(0, 1 - (s.y / (canvas.height * 0.8))); // Fade out
+        ctx.beginPath();
+        ctx.moveTo(s.x, s.y);
+        ctx.lineTo(s.x + s.length, s.y - s.length * 0.6); // Rastro atrás
+        ctx.stroke();
+
+        if (s.x < -200 || s.y > canvas.height) {
+            shootingStars.splice(i, 1);
+            i--;
+        }
+    }
+    ctx.restore();
+
+    // Desenhar Nuvens
+    const dayFactor = Math.sin(time * Math.PI);
+    if (dayFactor > 0.1) { // Só desenha se não for noite profunda
+        // Fator que é 0 no meio-dia e 0.5 no nascer/pôr do sol
+        const sunsetFactor = Math.abs(time - 0.5); 
+        const cloudColor = lerpColor('#FFFFFF', DAY_CYCLE_COLORS.sunrise.bottom, sunsetFactor);
+
+        ctx.save();
+        ctx.fillStyle = cloudColor;
+        ctx.globalAlpha = dayFactor * 0.7; // Nuvens um pouco transparentes
+
+        clouds.forEach(cloud => {
+            if (!gameProps.isGameOver) {
+                cloud.x -= gameProps.gameSpeed * cloud.speedFactor;
+                // A largura de uma nuvem é variável, 200 é uma estimativa segura
+                if (cloud.x + 200 < 0) { 
+                    cloud.x = canvas.width + 50;
+                    cloud.y = 50 + Math.random() * 150;
+                }
+            }
+
+            // Parallax para nuvens (movimento mais lento que os prédios)
+            const cloudParallaxX = pX * 0.7;
+            const cloudParallaxY = pY * 0.7;
+
+            ctx.beginPath(); // Começa um novo path para a nuvem inteira
+            cloud.parts.forEach(part => {
+                // Adiciona cada círculo ao path
+                ctx.arc(cloud.x + part.dx + cloudParallaxX, cloud.y + part.dy + cloudParallaxY, part.size, 0, Math.PI * 2);
+            });
+            ctx.fill(); // Preenche a forma combinada dos círculos
+        });
+        ctx.restore();
+    }
+
+    // Desenhar Sol
+    if (time > 0.2 && time < 0.8) {
+        const sunProgress = (time - 0.2) / 0.6;
+        const sunX = sunProgress * (canvas.width + 100) - 50;
+        const sunY = canvas.height - 150 - Math.sin(sunProgress * Math.PI) * (canvas.height - 300);
+        
+        ctx.save();
+        ctx.translate(sunX + pX * 0.1, sunY + pY * 0.1);
+        
+        // Brilho
+        ctx.shadowColor = '#FFA500';
+        ctx.shadowBlur = 50;
+        ctx.fillStyle = '#FFD700';
+        
+        ctx.beginPath();
+        ctx.arc(0, 0, 35, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        
+        ctx.restore();
+    }
+
+    // Desenhar Lua
+    let moonTime = time;
+    if (moonTime < 0.3) moonTime += 1.0;
+    
+    if (moonTime > 0.7 && moonTime < 1.3) {
+        const moonProgress = (moonTime - 0.7) / 0.6;
+        const moonX = moonProgress * (canvas.width + 100) - 50;
+        const moonY = canvas.height - 150 - Math.sin(moonProgress * Math.PI) * (canvas.height - 300);
+
+        ctx.save();
+        ctx.translate(moonX + pX * 0.1, moonY + pY * 0.1);
+
+        // Brilho
+        ctx.shadowColor = '#FFFFFF';
+        ctx.shadowBlur = 60; // Brilho aumentado
+        ctx.fillStyle = '#F4F6F0';
+        
+        ctx.beginPath();
+        ctx.arc(0, 0, 30, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        // Crateras
+        ctx.fillStyle = '#E0E0E0';
+        ctx.beginPath();
+        ctx.arc(-10, -6, 7, 0, Math.PI * 2);
+        ctx.arc(12, 6, 5, 0, Math.PI * 2);
+        ctx.arc(-3, 14, 4, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+    }
 
     // Desenhar e mover prédios (Paralaxe)
+    // const dayFactor = Math.sin(time * Math.PI); // 0 à noite, 1 de dia - já definido acima
     buildings.forEach(b => {
         if (!gameProps.isGameOver) {
             b.x -= gameProps.gameSpeed * 0.3; // Movem-se a 30% da velocidade do jogo
             if (b.x + b.width < 0) b.x += canvas.width * 2; // Recicla o prédio lá na frente
         }
+        const nightColor = b.isLighter ? '#222' : '#1a1a1a';
+        const dayColor = b.isLighter ? '#555' : '#4a4a4a';
+        b.color = lerpColor(nightColor, dayColor, dayFactor);
         ctx.fillStyle = b.color;
-        ctx.fillRect(b.x, b.y, b.width + 1, b.height); // +1 para evitar linhas brancas entre prédios
+        ctx.fillRect(b.x + pX, b.y + pY, b.width + 1, b.height); // +1 para evitar linhas brancas entre prédios
     });
+
+    // --- NEBLINA MATINAL ---
+    // Aparece perto do nascer do sol (0.25 é o pico do nascer do sol)
+    // Visível entre 0.15 e 0.35
+    let fogAlpha = 0;
+    if (time >= 0.15 && time <= 0.35) {
+        if (time < 0.25) fogAlpha = (time - 0.15) / 0.1; // Fade in
+        else fogAlpha = 1 - ((time - 0.25) / 0.1); // Fade out
+    }
+
+    if (fogAlpha > 0) {
+        ctx.save();
+        const gradient = ctx.createLinearGradient(0, canvas.height - 250, 0, canvas.height);
+        gradient.addColorStop(0, `rgba(255, 255, 255, 0)`);
+        gradient.addColorStop(1, `rgba(200, 220, 230, ${fogAlpha * 0.4})`); // Branco azulado
+        
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, canvas.height - 250, canvas.width, 250);
+        ctx.restore();
+    }
+
+    // --- VAGA-LUMES ---
+    // Apenas à noite
+    if (time > 0.7 || time < 0.25) {
+        fireflies.forEach(f => {
+            f.x += Math.cos(f.angle) * f.speed;
+            f.y += Math.sin(f.angle) * f.speed;
+            f.angle += (Math.random() - 0.5) * 0.2;
+            
+            if(f.x < 0) f.x = canvas.width;
+            if(f.x > canvas.width) f.x = 0;
+            if(f.y < canvas.height - 150) f.y = canvas.height - 150;
+            if(f.y > canvas.height) f.y = canvas.height;
+            
+            const alpha = 0.5 + Math.sin(Date.now() * 0.005 + f.x) * 0.5;
+            
+            ctx.fillStyle = `rgba(200, 255, 50, ${alpha})`;
+            ctx.beginPath();
+            ctx.arc(f.x, f.y, 2, 0, Math.PI * 2);
+            ctx.fill();
+        });
+    }
 }
