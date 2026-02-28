@@ -1,7 +1,7 @@
 import { ctx, canvas, gameProps } from './state.js';
 import { playJump, playGlitch } from './audio.js';
 import { SKINS } from './constants.js';
-import { createParticles, createGeometryTrail } from './particles.js';
+import { createParticles, createGeometryTrail, createGlitchTrail } from './particles.js';
 
 function drawCompleteBat(birdColor, wingFrame) {
     // 1. Desenhar Asas (Atrás do corpo)
@@ -215,6 +215,11 @@ export function drawBird(x, y, width, height, rotation, wingFrame) {
         drawCompleteBat('#00FFFF', wingFrame);
 
         ctx.restore();
+    }
+
+    // Rastro de partículas pixeladas para a skin Glitch
+    if (currentSkin.isGlitch && Math.random() < 0.3) {
+        createGlitchTrail(x + width / 2, y + height / 2);
     }
 
     // Desenho principal

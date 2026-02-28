@@ -1,5 +1,5 @@
 import { ctx, canvas, gameProps } from './state.js';
-import { playScore, playExplosion } from './audio.js';
+import { playScore, playExplosion, playBuy } from './audio.js';
 import { triggerShockwave } from './main.js';
 import { createParticles, createDust } from './particles.js';
 import { createCoin } from './coins.js';
@@ -7,10 +7,41 @@ import { spawnMovingTube, movingTube } from './movingTube.js';
 import { finishGeometryMode } from './geometry.js';
 
 export const pipes = [];
+const powerups = []; // Array para power-ups flutuantes
 const pipeWidth = 50;
 const pipeGap = 150;
 
 export function drawPipes() {
+    // Desenhar Power-ups
+    for (let i = 0; i < powerups.length; i++) {
+        let p = powerups[i];
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        
+        // Efeito pulsante
+        const scale = 1 + Math.sin(gameProps.frames * 0.1) * 0.1;
+        ctx.scale(scale, scale);
+
+        // Brilho Dourado
+        ctx.shadowColor = '#FFD700';
+        ctx.shadowBlur = 20;
+        ctx.fillStyle = '#FFD700';
+        
+        // Orbe
+        ctx.beginPath();
+        ctx.arc(0, 0, 15, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Ícone de Cifrão
+        ctx.fillStyle = '#000';
+        ctx.font = "bold 16px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("$", 0, 0);
+
+        ctx.restore();
+    }
+
     for (let i = 0; i < pipes.length; i++) {
         let p = pipes[i];
         if (p.destroyed) continue;
@@ -103,14 +134,24 @@ export function drawPipes() {
         // -----------------------------------
 
         // --- CANOS PADRÃO (Visual 3D) ---
+        let baseColor = '#2E8B57';
+        let shadowColor = '#1a5230';
+        let highlightColor = '#66cdaa';
+
+        // Se o power-up de transformar em moedas estiver ativo, muda para Dourado
+        if (gameProps.isCoinTransformActive) {
+            baseColor = '#FFD700';
+            shadowColor = '#DAA520';
+            highlightColor = '#FFFFE0';
+        }
         
         // Gradiente para dar volume cilíndrico
         const gradient = ctx.createLinearGradient(p.x, 0, p.x + pipeWidth, 0);
-        gradient.addColorStop(0, '#1a5230'); // Sombra escura
-        gradient.addColorStop(0.2, '#2E8B57'); // Cor base
-        gradient.addColorStop(0.5, '#66cdaa'); // Brilho central
-        gradient.addColorStop(0.8, '#2E8B57'); // Cor base
-        gradient.addColorStop(1, '#1a5230'); // Sombra escura
+        gradient.addColorStop(0, shadowColor); // Sombra escura
+        gradient.addColorStop(0.2, baseColor); // Cor base
+        gradient.addColorStop(0.5, highlightColor); // Brilho central
+        gradient.addColorStop(0.8, baseColor); // Cor base
+        gradient.addColorStop(1, shadowColor); // Sombra escura
 
         ctx.fillStyle = gradient;
         ctx.fillRect(p.x, 0, pipeWidth, p.top);
@@ -135,7 +176,7 @@ export function drawPipes() {
         ctx.fillRect(p.x - capOverhang + 10, canvas.height - p.bottom, 8, capHeight);
         
         // Bordas para definição
-        ctx.strokeStyle = '#0f331c'; // Verde bem escuro
+        ctx.strokeStyle = gameProps.isCoinTransformActive ? '#B8860B' : '#0f331c';
         ctx.lineWidth = 2;
         
         // Desenha contorno das tampas
@@ -147,6 +188,29 @@ export function drawPipes() {
 export function updatePipes(bird, onCollision) {
     let spawnRate = Math.max(70, 120 - Math.floor(gameProps.score / 5)); 
     
+    // Atualizar Power-ups
+    for (let i = 0; i < powerups.length; i++) {
+        let p = powerups[i];
+        p.x -= gameProps.gameSpeed;
+
+        // Colisão com o pássaro
+        const dx = (bird.x + bird.width/2) - p.x;
+        const dy = (bird.y + bird.height/2) - p.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+
+        if (dist < 30) { // Coletou
+            gameProps.isCoinTransformActive = true;
+            gameProps.coinTransformTimer = 1.3 * 60; // 1.3 segundos
+            playBuy(); // Som de coleta
+            createParticles(p.x, p.y, '#FFD700', 20);
+            powerups.splice(i, 1);
+            i--;
+        } else if (p.x < -50) {
+            powerups.splice(i, 1);
+            i--;
+        }
+    }
+
     // --- LÓGICA DE SPAWN MODO GEOMETRY ---
     if (gameProps.isGeometryMode) {
         // Só spawna obstáculos se ainda tiver tempo (> 60 frames)
@@ -218,6 +282,15 @@ export function updatePipes(bird, onCollision) {
                 createCoin(canvas.width + pipeWidth / 2, topHeight + pipeGap / 2);
             }
         }
+
+        // Spawn do Power-up Raro (Toque de Midas)
+        // Chance muito baixa (0.2% por frame quando spawna cano)
+        if (Math.random() < 0.05) { 
+            powerups.push({
+                x: canvas.width + 50,
+                y: Math.random() * (canvas.height - 200) + 100
+            });
+        }
     }
     }
 
@@ -287,6 +360,12 @@ export function updatePipes(bird, onCollision) {
                 triggerShockwave(p.x + pipeWidth/2, bird.y + bird.height/2);
                 createParticles(p.x + pipeWidth/2, p.top, '#FF4500', 30);
                 createParticles(p.x + pipeWidth/2, canvas.height - p.bottom, '#FF4500', 30);
+            } else if (gameProps.isCoinTransformActive) {
+                // Transforma obstáculo em moeda
+                p.destroyed = true;
+                gameProps.currentCoins += 5; // Bônus
+                playBuy();
+                createParticles(p.x + pipeWidth/2, p.top + 50, '#FFD700', 20);
             } else if (!gameProps.isImmune) {
                 onCollision();
             }

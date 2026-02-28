@@ -7,7 +7,7 @@ class Particle {
         this.x = x;
         this.y = y;
         this.color = color;
-        this.type = type; // 'circle', 'square', 'dust'
+        this.type = type; // 'circle', 'square', 'dust', 'pixel'
         this.life = 1.0;
 
         if (type === 'dust') {
@@ -15,6 +15,11 @@ class Particle {
             this.speedX = (Math.random() - 0.5) * 1 - gameProps.gameSpeed; // Move-se com o cenário
             this.speedY = -Math.random() * 1.5 - 0.5; // Flutua para cima
             this.decay = 0.04;
+        } else if (type === 'pixel') {
+            this.size = Math.random() * 4 + 2;
+            this.speedX = -gameProps.gameSpeed; // Fica para trás
+            this.speedY = (Math.random() - 0.5) * 2;
+            this.decay = 0.1; // Desaparece rápido
         } else {
             this.size = type === 'square' ? 34 : Math.random() * 5 + 3; 
             this.speedX = type === 'square' ? -gameProps.gameSpeed : Math.random() * 6 - 3;
@@ -43,6 +48,9 @@ class Particle {
             // Poeira (Círculo difuso)
             ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
             ctx.fill();
+        } else if (this.type === 'pixel') {
+            // Pixel (Quadrado pequeno)
+            ctx.fillRect(this.x, this.y, this.size, this.size);
         } else {
             // Partículas normais
             ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
@@ -64,6 +72,11 @@ export function createGeometryTrail(x, y, color) {
 
 export function createDust(x, y) {
     particles.push(new Particle(x, y, 'rgba(120, 110, 100, 0.4)', 'dust'));
+}
+
+export function createGlitchTrail(x, y) {
+    const color = Math.random() > 0.5 ? '#00FFFF' : '#FF00FF'; // Ciano ou Magenta
+    particles.push(new Particle(x, y, color, 'pixel'));
 }
 
 export function updateAndDrawParticles() {

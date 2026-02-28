@@ -60,7 +60,9 @@ export const gameProps = {
     timeOfDay: 0.0, // 0 = meia-noite, 0.5 = meio-dia
     dayNightCycleSpeed: 0.0001,
     hasAurora: false,
-    auroraChecked: false
+    auroraChecked: false,
+    isCoinTransformActive: false,
+    coinTransformTimer: 0
 };
 
 export function resetGameProps() {
@@ -112,4 +114,6 @@ export function resetGameProps() {
     // O ciclo de dia/noite continua entre as partidas para ser mais natural
     // gameProps.timeOfDay = 0.0; 
     // isBossMode é definido no menu, não reseta aqui para false
+    gameProps.isCoinTransformActive = false;
+    gameProps.coinTransformTimer = 0;
 }

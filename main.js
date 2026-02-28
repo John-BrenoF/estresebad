@@ -169,6 +169,12 @@ function loop() {
             }
         }
 
+        // Atualiza Timer do Toque de Midas (Transformar em Moedas)
+        if (gameProps.isCoinTransformActive) {
+            gameProps.coinTransformTimer--;
+            if (gameProps.coinTransformTimer <= 0) gameProps.isCoinTransformActive = false;
+        }
+
         // Atualiza o ciclo de dia/noite
         gameProps.timeOfDay += gameProps.dayNightCycleSpeed;
         if (gameProps.timeOfDay > 1) gameProps.timeOfDay -= 1;

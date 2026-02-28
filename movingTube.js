@@ -1,6 +1,6 @@
 import { ctx, canvas, gameProps } from './state.js';
 import { createParticles, createDust } from './particles.js';
-import { playExplosion } from './audio.js';
+import { playExplosion, playBuy } from './audio.js';
 import { triggerShockwave } from './main.js';
 
 const pipeGap = 150;
@@ -79,12 +79,22 @@ export function drawMovingTube() {
     // --------------------------------------
 
     // Gradiente Industrial (Laranja Metálico)
+    let color1 = '#8B2500';
+    let color2 = '#FF6B35';
+    let color3 = '#FF9F75';
+
+    if (gameProps.isCoinTransformActive) {
+        color1 = '#DAA520';
+        color2 = '#FFD700';
+        color3 = '#FFFFE0';
+    }
+
     const gradient = ctx.createLinearGradient(movingTube.x, 0, movingTube.x + movingTube.width, 0);
-    gradient.addColorStop(0, '#8B2500'); // Ferrugem/Sombra
-    gradient.addColorStop(0.2, '#FF6B35'); // Laranja Base
-    gradient.addColorStop(0.5, '#FF9F75'); // Brilho
-    gradient.addColorStop(0.8, '#FF6B35');
-    gradient.addColorStop(1, '#8B2500');
+    gradient.addColorStop(0, color1); // Ferrugem/Sombra
+    gradient.addColorStop(0.2, color2); // Laranja Base
+    gradient.addColorStop(0.5, color3); // Brilho
+    gradient.addColorStop(0.8, color2);
+    gradient.addColorStop(1, color1);
 
     ctx.fillStyle = gradient;
     ctx.fillRect(movingTube.x, 0, movingTube.width, movingTube.topHeight);
@@ -113,6 +123,11 @@ function checkMovingTubeCollision(bird, onCollision) {
             playExplosion();
             triggerShockwave(movingTube.x + movingTube.width/2, bird.y + bird.height/2);
             createParticles(movingTube.x + movingTube.width/2, movingTube.topHeight, '#FF4500', 40);
+        } else if (gameProps.isCoinTransformActive) {
+            movingTube.active = false;
+            gameProps.currentCoins += 10; // Bônus maior
+            playBuy();
+            createParticles(movingTube.x + movingTube.width/2, movingTube.topHeight, '#FFD700', 30);
         } else if (!gameProps.isImmune) {
             onCollision();
         }
