@@ -246,10 +246,10 @@ function draw3DButton(rect, color, text, fontSize = "30px") {
     ctx.shadowColor = 'rgba(0,0,0,0.5)';
     ctx.shadowBlur = 2;
 
-    // Efeito Glitch no texto
-    if (gameProps.rgbSplitTimer > 0 && Math.random() < 0.5) {
-        const xOff = (Math.random() - 0.5) * 8;
-        const yOff = (Math.random() - 0.5) * 8;
+    // Efeito Glitch no texto (looping)
+    if (Math.random() < 0.02) { // Chance pequena a cada frame para o glitch acontecer
+        const xOff = (Math.random() - 0.5) * 6;
+        const yOff = (Math.random() - 0.5) * 6;
         ctx.save();
         ctx.globalCompositeOperation = 'screen';
         ctx.fillStyle = 'rgba(255, 0, 0, 0.7)';
@@ -277,10 +277,10 @@ export function drawStartScreen() {
     ctx.font = "bold 45px Changa";
     ctx.textAlign = "center";
 
-    // Efeito Glitch no Título
-    if (gameProps.rgbSplitTimer > 0 && Math.random() < 0.7) {
-        const xOff = (Math.random() - 0.5) * 10;
-        const yOff = (Math.random() - 0.5) * 10;
+    // Efeito Glitch no Título (looping)
+    if (Math.random() < 0.04) { // Chance um pouco maior para o título
+        const xOff = (Math.random() - 0.5) * 8;
+        const yOff = (Math.random() - 0.5) * 8;
         ctx.save();
         ctx.globalCompositeOperation = 'screen';
         ctx.fillStyle = 'rgba(255, 0, 0, 0.7)';

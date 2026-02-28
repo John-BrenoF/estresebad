@@ -28,6 +28,7 @@ export const gameProps = {
     isShopOpen: false,
     shopData: null,
     isImmune: false,
+    menuFadeInTimer: 30, // Animação de fade-in para o menu inicial
     immunityTimer: 0,
     cardCooldownTimer: 0,
     isMagnetActive: false,
@@ -78,6 +79,7 @@ export function resetGameProps() {
     gameProps.totalCoins = getTotalCoins();
     gameProps.isShopOpen = false;
     gameProps.shopData = getShopData();
+    gameProps.menuFadeInTimer = 0;
     gameProps.isImmune = false;
     gameProps.immunityTimer = 0;
     // O cooldown do card não reseta para não ser abusado

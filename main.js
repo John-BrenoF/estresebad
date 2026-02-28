@@ -24,6 +24,7 @@ let screenShake = { intensity: 0, duration: 0 };
 function gameOver() {
     gameProps.isGameOver = true;
     gameProps.lastDeathTime = Date.now();
+    gameProps.menuFadeInTimer = 30; // Ativa a animação de fade-in para a tela de game over
     playDie();
     triggerScreenShake(10, 20);
     createParticles(bird.x + bird.width / 2, bird.y + bird.height / 2, '#FF4444', 40);
@@ -273,22 +274,31 @@ function loop() {
         drawGameOverScreen();
     }
 
-    // --- EFEITO DE DISTORÇÃO CROMÁTICA (RGB SPLIT SIMULADO) ---
-    if (gameProps.rgbSplitTimer > 0) {
-        gameProps.rgbSplitTimer--;
+    // --- EFEITO DE FADE-IN GLITCH PARA MENUS ---
+    if (gameProps.menuFadeInTimer > 0) {
+        const progress = 1 - (gameProps.menuFadeInTimer / 30.0); // 0 a 1
         
-        // Intensidade baseada no tempo restante
-        const intensity = (gameProps.rgbSplitTimer / 120);
-        const offset = (Math.random() * 10 + 5) * intensity;
+        // 1. Efeito Glitch
+        if (Math.random() < 0.7) { // Alta chance de glitch durante o fade-in
+            const intensity = 1 - progress; // 1 a 0
+            const offset = (Math.random() * 20 + 10) * intensity;
 
-        ctx.save();
-        ctx.globalCompositeOperation = 'screen'; // Mistura aditiva para simular luz
-        ctx.globalAlpha = 0.6 * intensity;
-        
-        // Desenha a tela sobre ela mesma com deslocamentos (Simula canais desajustados)
-        ctx.drawImage(canvas, offset, 0);  // Deslocamento para a direita
-        ctx.drawImage(canvas, -offset, 0); // Deslocamento para a esquerda
-        ctx.restore();
+            ctx.save();
+            ctx.globalCompositeOperation = 'screen';
+            ctx.globalAlpha = 0.7 * intensity;
+            ctx.drawImage(canvas, offset, 0);
+            ctx.drawImage(canvas, -offset, 0);
+            ctx.restore();
+            
+            if(gameProps.menuFadeInTimer % 5 === 0) playGlitch();
+        }
+
+        // 2. Fade-in (overlay preto que desaparece)
+        // Desenhado por último para cobrir tudo
+        ctx.fillStyle = `rgba(0, 0, 0, ${1 - progress})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        gameProps.menuFadeInTimer--;
     }
 
     ctx.restore();
@@ -406,10 +416,7 @@ function handleInput(e) {
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
         const action = handleMenuClick(x, y);
-        if (action) {
-            gameProps.rgbSplitTimer = 15; // Duração fixa para o glitch do clique
-            playGlitch();
-        }
+        if (action) playGlitch();
 
         if (action === 'start') {
             gameProps.isInMenu = false;
@@ -421,6 +428,7 @@ function handleInput(e) {
             if (gameProps.totalCoins === 0) gameProps.totalCoins = getTotalCoins();
 
             gameProps.isShopOpen = true;
+            gameProps.menuFadeInTimer = 30;
         } else if (action === 'hardcore') {
             gameProps.isInMenu = false;
             gameProps.isHardcoreMode = true;
@@ -432,6 +440,7 @@ function handleInput(e) {
             startWaitingPeriod();
         } else if (action === 'missions') {
             gameProps.isMissionMapOpen = true;
+            gameProps.menuFadeInTimer = 30;
         }
         return;
     }
@@ -515,8 +524,7 @@ function handleInput(e) {
     if (gameProps.isGameOver) {
         // Impede reiniciar se morreu há menos de 1 segundo (evita cliques acidentais)
         if (Date.now() - gameProps.lastDeathTime < 1000) return;
-        gameProps.rgbSplitTimer = 15;
-        playGlitch();
+        playGlitch(); // Som de clique ao reiniciar
         startWaitingPeriod();
     } else {
         bird.jumpAction();

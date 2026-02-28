@@ -292,16 +292,14 @@ export function handleMissionClick(x, y) {
             mission.claimed = true;
             saveTotalCoins(mission.reward);
             gameProps.totalCoins = getTotalCoins(); // Update state
-            gameProps.rgbSplitTimer = 10;
-            playGlitch();
+            playGlitch(); // Som de feedback
             localStorage.setItem('morcegoFlap_missions', JSON.stringify(dailyMissions));
         }
     });
 
     // Fechar ao clicar fora da área da lista (cabeçalho ou rodapé)
     if (y < 130 || y > canvas.height - 50) {
-        gameProps.rgbSplitTimer = 15;
-        playGlitch();
         gameProps.isMissionMapOpen = false;
+        gameProps.menuFadeInTimer = 30; // Ativa o fade-in para o menu principal
     }
 }

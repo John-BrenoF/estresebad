@@ -137,8 +137,7 @@ export function handleShopClick(x, y) {
     // Clicou em Sair
     if (x > exitButton.rect.x && x < exitButton.rect.x + exitButton.rect.w && y > exitButton.rect.y && y < exitButton.rect.y + exitButton.rect.h) {
         gameProps.isShopOpen = false;
-        gameProps.rgbSplitTimer = 15;
-        playGlitch();
+        gameProps.menuFadeInTimer = 30; // Ativa o fade-in para o menu principal
         return;
     }
 
@@ -150,8 +149,7 @@ export function handleShopClick(x, y) {
             saveTotalCoins(-CARD_PRICE);
             saveShopData(gameProps.shopData);
             playBuy();
-            gameProps.rgbSplitTimer = 10; // Glitch mais curto para compra
-            playGlitch();
+            playGlitch(); // Som de clique/feedback
             incrementMissionProgress('buy_item');
         }
     }
@@ -164,8 +162,7 @@ export function handleShopClick(x, y) {
             saveTotalCoins(-SLOWMO_PRICE);
             saveShopData(gameProps.shopData);
             playBuy();
-            gameProps.rgbSplitTimer = 10;
-            playGlitch();
+            playGlitch(); // Som de clique/feedback
             incrementMissionProgress('buy_item');
         }
     }
@@ -177,8 +174,7 @@ export function handleShopClick(x, y) {
             if (isOwned) {
                 // Equipar
                 gameProps.shopData.equippedSkin = item.id;
-                gameProps.rgbSplitTimer = 10;
-                playGlitch();
+                playGlitch(); // Som de clique/feedback
                 saveShopData(gameProps.shopData);
             } else {
                 // Comprar
@@ -188,8 +184,7 @@ export function handleShopClick(x, y) {
                     saveTotalCoins(-item.price);
                     saveShopData(gameProps.shopData);
                     playBuy();
-                    gameProps.rgbSplitTimer = 10;
-                    playGlitch();
+                    playGlitch(); // Som de clique/feedback
                     incrementMissionProgress('buy_item');
                 }
             }
