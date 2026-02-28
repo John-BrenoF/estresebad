@@ -183,16 +183,27 @@ export function playGhost() {
 const normalMusic = new Audio('musicap.mp3'); // Certifique-se de que o caminho está correto
 normalMusic.loop = true;
 
+const horrorMusic = new Audio('vídeo de _Evillica _foryou _terror _analoghorror(MP3).mp3');
+horrorMusic.loop = true;
+
 export function playNormalMusic() {
-    normalMusic.currentTime = 0;
-    normalMusic.loop = true;
-    normalMusic.play().catch(e => console.error("Erro ao tocar música normal:", e));
+    stopNormalMusic(); // Garante que ambas estejam paradas/resetadas antes de escolher
+
+    if (Math.random() < 0.3) { // 30% de chance
+        horrorMusic.play().catch(e => console.error("Erro ao tocar música horror:", e));
+    } else {
+        normalMusic.play().catch(e => console.error("Erro ao tocar música normal:", e));
+    }
 }
 
 export function stopNormalMusic() {
     normalMusic.pause();
     normalMusic.currentTime = 0;
+    horrorMusic.pause();
+    horrorMusic.currentTime = 0;
 }
+
+
 
 
 const bossMusic = new Audio('ttoux.mp3');
