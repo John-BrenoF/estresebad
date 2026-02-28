@@ -18,7 +18,7 @@ import { loadMissions, updateMissionProgress, drawMissionMap, handleMissionClick
 import { initBoss, updateBoss, drawBoss, boss } from './boss.js';
 import { updateAndDrawFakeCones, resetFakeCones } from './fakeCones.js';
 import { checkGeometryEvent, updateGeometryState, drawGeometryOverlay } from './geometry.js';
-
+ 
 let screenShake = { intensity: 0, duration: 0 };
 
 function gameOver() {
