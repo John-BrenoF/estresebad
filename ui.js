@@ -226,6 +226,29 @@ const bossButton = { x: canvas.width / 2 - 125, y: canvas.height / 2 + 90, w: 25
 const shopButton = { x: canvas.width / 2 - 125, y: canvas.height / 2 + 150, w: 120, h: 50 };
 const missionsButton = { x: canvas.width / 2 + 5, y: canvas.height / 2 + 150, w: 120, h: 50 };
 
+// Função auxiliar para desenhar botões 3D
+function draw3DButton(rect, color, text, fontSize = "30px") {
+    // Sombra (Profundidade)
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fillRect(rect.x + 4, rect.y + 4, rect.w, rect.h);
+
+    // Borda Escura (Bottom/Right)
+    ctx.fillStyle = '#111'; 
+    ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+
+    // Cor Principal (Top/Left - Efeito de luz)
+    ctx.fillStyle = color;
+    ctx.fillRect(rect.x, rect.y, rect.w - 4, rect.h - 4);
+
+    // Texto
+    ctx.fillStyle = '#FFF';
+    ctx.font = fontSize + " Changa";
+    ctx.shadowColor = 'rgba(0,0,0,0.5)';
+    ctx.shadowBlur = 2;
+    ctx.fillText(text, rect.x + rect.w / 2 - 2, rect.y + rect.h / 2 + 10);
+    ctx.shadowBlur = 0;
+}
+
 export function drawStartScreen() {
     ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -244,39 +267,19 @@ export function drawStartScreen() {
     ctx.textAlign = "center"; // Centraliza o texto para todos os botões
 
     // Botão Iniciar
-    ctx.fillStyle = '#2E8B57';
-    ctx.fillRect(startButton.x, startButton.y, startButton.w, startButton.h);
-    ctx.fillStyle = '#FFF';
-    ctx.font = "30px Changa";
-    ctx.fillText("Iniciar", canvas.width / 2, startButton.y + 35);
+    draw3DButton(startButton, '#2E8B57', "Iniciar");
 
     // Botão Hardcore
-    ctx.fillStyle = '#8B0000';
-    ctx.fillRect(hardcoreButton.x, hardcoreButton.y, hardcoreButton.w, hardcoreButton.h);
-    ctx.fillStyle = '#FFF';
-    ctx.font = "30px Changa";
-    ctx.fillText("Hardcore", canvas.width / 2, hardcoreButton.y + 36);
+    draw3DButton(hardcoreButton, '#8B0000', "Hardcore");
 
     // Botão Boss Rush
-    ctx.fillStyle = '#800080';
-    ctx.fillRect(bossButton.x, bossButton.y, bossButton.w, bossButton.h);
-    ctx.fillStyle = '#FFF';
-    ctx.font = "30px Changa";
-    ctx.fillText("Boss Rush", canvas.width / 2, bossButton.y + 36);
+    draw3DButton(bossButton, '#800080', "Boss Rush");
 
     // Botão Loja
-    ctx.fillStyle = '#4682B4';
-    ctx.fillRect(shopButton.x, shopButton.y, shopButton.w, shopButton.h);
-    ctx.fillStyle = '#FFF';
-    ctx.font = "24px Changa";
-    ctx.fillText("Loja", shopButton.x + shopButton.w / 2, shopButton.y + 34);
+    draw3DButton(shopButton, '#4682B4', "Loja", "24px");
 
     // Botão Missões
-    ctx.fillStyle = '#663399';
-    ctx.fillRect(missionsButton.x, missionsButton.y, missionsButton.w, missionsButton.h);
-    ctx.fillStyle = '#FFF';
-    ctx.font = "24px Changa";
-    ctx.fillText("Missões", missionsButton.x + missionsButton.w / 2, missionsButton.y + 34);
+    draw3DButton(missionsButton, '#663399', "Missões", "24px");
 
     ctx.textAlign = "left";
 }

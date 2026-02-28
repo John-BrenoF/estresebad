@@ -108,50 +108,69 @@ export function drawBird(x, y, width, height, rotation, wingFrame) {
         ctx.shadowBlur = 20;
     }
 
-    // Desenhar Corpo (Roxo Escuro)
-    // Base
+    // --- DESENHO DO MORCEGO ---
+
+    // 1. Desenhar Asas (Atrás do corpo)
+    // Asas membranosas com recortes (estilo Batman/Morcego)
+    ctx.fillStyle = '#220033'; // Cor da membrana da asa (bem escura)
+    const wingY = Math.sin(wingFrame) * 12; // Amplitude do batimento
+    
+    ctx.beginPath();
+    // Asa Esquerda
+    ctx.moveTo(-4, 2); 
+    ctx.quadraticCurveTo(-20, wingY - 25, -45, wingY - 10); // Borda superior (ombro até ponta)
+    ctx.quadraticCurveTo(-35, wingY + 10, -25, wingY + 5);  // Recorte 1
+    ctx.quadraticCurveTo(-15, wingY + 10, -4, 8);           // Recorte 2 (volta ao corpo)
+    
+    // Asa Direita (Espelhada)
+    ctx.moveTo(4, 2); 
+    ctx.quadraticCurveTo(20, wingY - 25, 45, wingY - 10);
+    ctx.quadraticCurveTo(35, wingY + 10, 25, wingY + 5);
+    ctx.quadraticCurveTo(15, wingY + 10, 4, 8);
+    ctx.fill();
+
+    // 2. Desenhar Orelhas (Pontudas e Grandes)
+    ctx.fillStyle = birdColor;
+    ctx.beginPath();
+    ctx.moveTo(-10, -5); ctx.lineTo(-14, -24); ctx.lineTo(-4, -10); // Orelha Esquerda
+    ctx.moveTo(10, -5); ctx.lineTo(14, -24); ctx.lineTo(4, -10);   // Orelha Direita
+    ctx.fill();
+
+    // 3. Desenhar Corpo (Redondo e "Felpudo")
     ctx.fillStyle = birdColor; 
     ctx.beginPath();
-    ctx.ellipse(0, 0, 12, 10, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 0, 14, 12, 0, 0, Math.PI * 2); // Corpo levemente maior
     ctx.fill();
 
     // Iluminação (Highlight) - Parte superior esquerda
-    const highlight = ctx.createRadialGradient(-4, -4, 1, -4, -4, 8);
+    const highlight = ctx.createRadialGradient(-5, -5, 1, -5, -5, 10);
     highlight.addColorStop(0, 'rgba(255, 255, 255, 0.5)');
     highlight.addColorStop(1, 'rgba(255, 255, 255, 0)');
     ctx.fillStyle = highlight;
     ctx.beginPath();
-    ctx.ellipse(0, 0, 12, 10, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 0, 14, 12, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Desenhar Olhos
+    // 4. Desenhar Rosto
+    // Olhos (Amarelos brilhantes para visão noturna)
+    ctx.fillStyle = '#FFFF00'; 
+    ctx.beginPath();
+    ctx.arc(5, -3, 3.5, 0, Math.PI * 2); // Olho direito
+    ctx.arc(-5, -3, 3.5, 0, Math.PI * 2); // Olho esquerdo
+    ctx.fill();
+    
+    // Pupilas (Fendas verticais)
+    ctx.fillStyle = 'black'; 
+    ctx.beginPath();
+    ctx.ellipse(5, -3, 1, 2.5, 0, 0, Math.PI * 2);
+    ctx.ellipse(-5, -3, 1, 2.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Presas (Fangs)
     ctx.fillStyle = 'white';
     ctx.beginPath();
-    ctx.arc(4, -2, 4, 0, Math.PI * 2); // Olho direito
-    ctx.arc(-4, -2, 4, 0, Math.PI * 2); // Olho esquerdo
-    ctx.fill();
-    ctx.fillStyle = 'black'; // Pupilas
-    ctx.beginPath();
-    ctx.arc(5, -2, 1.5, 0, Math.PI * 2);
-    ctx.arc(-3, -2, 1.5, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Desenhar Orelhas
-    ctx.fillStyle = birdColor;
-    ctx.beginPath();
-    ctx.moveTo(-8, -8); ctx.lineTo(-12, -20); ctx.lineTo(-2, -8);
-    ctx.moveTo(8, -8); ctx.lineTo(12, -20); ctx.lineTo(2, -8);
-    ctx.fill();
-
-    // Desenhar Asas (Animadas)
-    ctx.fillStyle = '#2e004f'; // Cor da asa mais escura
-    const wingY = Math.sin(wingFrame) * 10; // Oscilação da asa
-    
-    ctx.beginPath();
-    // Asa Esquerda
-    ctx.moveTo(-8, 2); ctx.quadraticCurveTo(-20, wingY - 10, -28, wingY); ctx.lineTo(-10, 8);
-    // Asa Direita
-    ctx.moveTo(8, 2); ctx.quadraticCurveTo(20, wingY - 10, 28, wingY); ctx.lineTo(10, 8);
+    ctx.moveTo(-3, 3); ctx.lineTo(-1, 7); ctx.lineTo(1, 3); // Dente esquerdo
+    ctx.moveTo(1, 3); ctx.lineTo(3, 7); ctx.lineTo(5, 3);   // Dente direito
     ctx.fill();
 
     ctx.restore();

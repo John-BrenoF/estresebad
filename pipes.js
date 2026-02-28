@@ -116,6 +116,11 @@ export function drawPipes() {
         ctx.fillRect(p.x, 0, pipeWidth, p.top);
         ctx.fillRect(p.x, canvas.height - p.bottom, pipeWidth, p.bottom);
         
+        // Reflexo Especular (Brilho de plástico/metal)
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+        ctx.fillRect(p.x + 10, 0, 8, p.top); // Brilho no cano de cima
+        ctx.fillRect(p.x + 10, canvas.height - p.bottom, 8, p.bottom); // Brilho no cano de baixo
+
         // Tampas dos canos (Borda mais larga na ponta)
         const capHeight = 25;
         const capOverhang = 4;
@@ -124,6 +129,10 @@ export function drawPipes() {
         ctx.fillRect(p.x - capOverhang, p.top - capHeight, pipeWidth + capOverhang * 2, capHeight);
         // Tampa Inferior
         ctx.fillRect(p.x - capOverhang, canvas.height - p.bottom, pipeWidth + capOverhang * 2, capHeight);
+        
+        // Brilho nas tampas
+        ctx.fillRect(p.x - capOverhang + 10, p.top - capHeight, 8, capHeight);
+        ctx.fillRect(p.x - capOverhang + 10, canvas.height - p.bottom, 8, capHeight);
         
         // Bordas para definição
         ctx.strokeStyle = '#0f331c'; // Verde bem escuro

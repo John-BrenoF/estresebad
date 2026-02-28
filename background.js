@@ -440,6 +440,16 @@ export function updateAndDrawBackground() {
             const cloudParallaxX = pX * 0.7;
             const cloudParallaxY = pY * 0.7;
 
+            // Sombra da Nuvem (Offset)
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.beginPath();
+            cloud.parts.forEach(part => {
+                ctx.arc(cloud.x + part.dx + cloudParallaxX + 5, cloud.y + part.dy + cloudParallaxY + 5, part.size, 0, Math.PI * 2);
+            });
+            ctx.fill();
+
+            // Corpo da Nuvem
+            ctx.fillStyle = cloudColor;
             ctx.beginPath(); // Começa um novo path para a nuvem inteira
             cloud.parts.forEach(part => {
                 // Adiciona cada círculo ao path
