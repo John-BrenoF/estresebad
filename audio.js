@@ -183,7 +183,7 @@ export function playGhost() {
 const normalMusic = new Audio('musicap.mp3'); // Certifique-se de que o caminho está correto
 normalMusic.loop = true;
 
-const horrorMusic = new Audio('vídeo de _Evillica _foryou _terror _analoghorror(MP3).mp3');
+const horrorMusic = new Audio('ttoux.mp3');
 horrorMusic.loop = true;
 
 export function playNormalMusic() {
