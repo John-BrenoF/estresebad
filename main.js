@@ -3,9 +3,9 @@ import { DELAY_TIMES } from './constants.js';
 import { checkHighScore, saveHighScore, saveTotalCoins, saveShopData, getShopData, getTotalCoins } from './storage.js';
 import { bird } from './bird.js';
 import { pipes, updatePipes, drawPipes } from './pipes.js';
-import { initMovingTube, updateMovingTube, drawMovingTube } from './movingTube.js';
+import { initMovingTube, updateMovingTube, drawMovingTube, movingTube } from './movingTube.js';
 import { drawScore, drawWaitingScreen, drawGameOverScreen, drawStartScreen, handleMenuClick, attackButtonRect, shieldButtonRect, furyButtonRect } from './ui.js';
-import { playDie, playShield, playSlowMo, playBossMusic, stopBossMusic, playPlayerAttack, playPlayerRedShot, playBossDefeated, playPlayerShield, playNormalMusic, stopNormalMusic, resumeAudio, playGlitch } from './audio.js';
+import { playDie, playShield, playSlowMo, playBossMusic, stopBossMusic, playPlayerAttack, playPlayerRedShot, playBossDefeated, playPlayerShield, playNormalMusic, stopNormalMusic, resumeAudio, playGlitch, playPowerupSound } from './audio.js';
 import { createParticles, updateAndDrawParticles, clearParticles } from './particles.js';
 import { initBackground, updateAndDrawBackground } from './background.js';
 import { updateLightning, drawLightning, resetLightning } from './lightning.js';
@@ -87,6 +87,7 @@ function resetGame() {
     clearCoins();
     
     resetGameProps();
+    gameProps.glitchEffectTimer = 0;
     initMovingTube();
     initBackground();
     resetLightning();
@@ -163,7 +164,12 @@ function loop() {
         if (gameProps.playerShieldCooldown > 0) {
             gameProps.playerShieldCooldown--;
         }
-        if (gameProps.playerShieldCooldown < (1.1 * 60) - 10) gameProps.isPlayerShieldActive = false; // Shield stays active for 10 frames
+        if (gameProps.playerShieldTimer > 0) {
+            gameProps.playerShieldTimer--;
+            if (gameProps.playerShieldTimer <= 0) {
+                gameProps.isPlayerShieldActive = false;
+            }
+        }
         if (gameProps.freezeTimer > 0) {
             gameProps.freezeTimer--;
             if (gameProps.freezeTimer <= 0) gameProps.isFrozen = false;
@@ -174,6 +180,14 @@ function loop() {
             gameProps.furyTimer--;
             if (gameProps.furyTimer <= 0) {
                 gameProps.isFuryActive = false;
+            }
+        }
+
+        // Atualiza Triple Shot
+        if (gameProps.isTripleShotActive) {
+            gameProps.tripleShotTimer--;
+            if (gameProps.tripleShotTimer <= 0) {
+                gameProps.isTripleShotActive = false;
             }
         }
 
@@ -288,6 +302,28 @@ function loop() {
         drawGameOverScreen();
     }
 
+    // --- EFEITO DE GLITCH ALEATÓRIO ---
+    if (!gameProps.isGameOver && !gameProps.isInMenu && !gameProps.isShopOpen && !gameProps.isMissionMapOpen) {
+        // A cada ~5 segundos, 10% de chance de ativar
+        if (gameProps.frames > 0 && gameProps.frames % 300 === 0 && Math.random() < 0.10) {
+            gameProps.glitchEffectTimer = 15; // Duração de 15 frames
+        }
+    }
+
+    if (gameProps.glitchEffectTimer > 0) {
+        gameProps.glitchEffectTimer--;
+        if (gameProps.glitchEffectTimer % 4 === 0) playGlitch(); // Toca o som com menos frequência que o efeito visual
+        
+        const intensity = (Math.random() * 25 + 5);
+        ctx.save();
+        // Simula um "RGB split" desenhando a tela deslocada com cores aditivas
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.globalAlpha = 0.6;
+        ctx.drawImage(canvas, intensity, Math.random() * 8 - 4); // Canal R/G
+        ctx.drawImage(canvas, -intensity, Math.random() * 8 - 4); // Canal B/G
+        ctx.restore();
+    }
+
     // --- EFEITO DE FADE-IN GLITCH PARA MENUS ---
     if (gameProps.menuFadeInTimer > 0) {
         const progress = 1 - (gameProps.menuFadeInTimer / 30.0); // 0 a 1
@@ -367,10 +403,21 @@ function activateMagnet() {
 
 function activatePlayerShield() {
     if (gameProps.playerShieldCooldown <= 0) {
-        gameProps.isPlayerShieldActive = true; // Ativa o escudo
-        gameProps.playerShieldCooldown = 1.1 * 60; // 1.1 segundos
+        gameProps.isPlayerShieldActive = true;
+        gameProps.playerShieldTimer = 3 * 60; // Duração de 3 segundos
+        gameProps.playerShieldCooldown = 10 * 60; // Recarga de 10 segundos
         gameProps.shieldUsageCount++;
         playPlayerShield();
+
+        // 9% de chance de curar o boss
+        if (gameProps.isBossMode && Math.random() < 0.09) {
+            if (boss.hp < boss.maxHp) {
+                const healthToHeal = (boss.maxHp - boss.hp) * 0.10;
+                boss.hp = Math.min(boss.maxHp, boss.hp + healthToHeal);
+                // Efeito visual de cura no boss
+                createParticles(boss.x + boss.width / 2, boss.y + boss.height / 2, '#00FF00', 30);
+            }
+        }
     }
 }
 
@@ -380,6 +427,17 @@ function activateFury() {
         gameProps.furyCharge = 0;
         gameProps.furyTimer = 2 * 60; // 2 segundos
         // playFurySound(); // Opcional: adicionar som
+    }
+}
+
+function activateTripleShot() {
+    // Este item é comprado na loja, a lógica de compra deve ser adicionada em shop.js
+    if (gameProps.shopData.tripleShotCharges > 0 && !gameProps.isTripleShotActive) {
+        gameProps.isTripleShotActive = true;
+        gameProps.tripleShotTimer = 7 * 60; // 7 segundos de duração
+        gameProps.shopData.tripleShotCharges--;
+        saveShopData(gameProps.shopData);
+        playPowerupSound();
     }
 }
 
@@ -396,10 +454,22 @@ function playerAttack() {
             playPlayerAttack();
         }
 
-        boss.projectiles.push({
-            x: bird.x + bird.width, y: bird.y + bird.height / 2,
-            vx: 8, vy: 0, size: size, type: type
-        });
+        if (gameProps.isTripleShotActive) {
+            // Tiro triplo
+            playPlayerAttack(); // Toca o som uma vez
+            // Tiro central
+            boss.projectiles.push({ x: bird.x + bird.width, y: bird.y + bird.height / 2, vx: 8, vy: 0, size: size, type: type });
+            // Tiro superior (diagonal)
+            boss.projectiles.push({ x: bird.x + bird.width, y: bird.y + bird.height / 2, vx: 7.5, vy: -1.5, size: size * 0.8, type: type });
+            // Tiro inferior (diagonal)
+            boss.projectiles.push({ x: bird.x + bird.width, y: bird.y + bird.height / 2, vx: 7.5, vy: 1.5, size: size * 0.8, type: type });
+        } else {
+            // Tiro normal
+            boss.projectiles.push({
+                x: bird.x + bird.width, y: bird.y + bird.height / 2,
+                vx: 8, vy: 0, size: size, type: type
+            });
+        }
 
         gameProps.playerShotsFired++;
         if (gameProps.playerShotsFired >= 2) {
@@ -539,6 +609,10 @@ function handleInput(e) {
 
     if (e.type === 'keydown' && e.code === 'KeyZ' && !gameProps.isGameOver) {
         activateFury();
+    }
+
+    if (e.type === 'keydown' && e.code === 'KeyG' && !gameProps.isGameOver) {
+        activateTripleShot();
     }
 
     if (e.type === 'keydown' && e.code !== 'Space') return;

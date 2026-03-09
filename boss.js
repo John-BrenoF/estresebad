@@ -1,7 +1,8 @@
 import { ctx, canvas, gameProps } from './state.js';
 import { saveTotalCoins, getTotalCoins } from './storage.js';
 import { triggerScreenShake } from './main.js';
-import { playBossDefeated, playBossLaser, playBossRedLightning } from './audio.js';
+import { playBossDefeated, playBossLaser, playBossRedLightning, playExplosion, playGlitch } from './audio.js';
+import { createParticles } from './particles.js';
 
 export const boss = {
     x: 0,
@@ -9,15 +10,17 @@ export const boss = {
     width: 80,
     height: 80,
     active: false,
-    hp: 500,
-    maxHp: 500,
+    hp: 305,
+    maxHp: 305,
+    prevX: 0,
+    prevY: 0,
     state: 'idle', // idle, attack1, attack2, attack3, attack4, attack5
     isDefeated: false,
     timer: 0,
     attackTimer: 0,
     projectiles: [],
     lasers: [], // {x, y, w, h, warning: boolean}
-    frame: 0,
+    frame: 0,   
     survivalTimer: 0,
     hitTimer: 0, // Para o efeito de piscar ao ser atingido
     redLightningTimer: 0 // Timer visual para o raio vermelho
@@ -27,6 +30,8 @@ export function initBoss() {
     boss.active = true;
     boss.x = canvas.width - 120;
     boss.y = canvas.height / 2 - 40;
+    boss.prevX = boss.x;
+    boss.prevY = boss.y;
     boss.isDefeated = false;
     boss.state = 'idle';
     boss.hp = boss.maxHp;
@@ -49,8 +54,18 @@ export function updateBoss(bird, onCollision) {
     boss.frame += 0.1;
     if (boss.hitTimer > 0) boss.hitTimer--;
 
+    boss.prevX = boss.x;
+    boss.prevY = boss.y;
+
     // Movimento flutuante do Boss
-    boss.y = (canvas.height / 2 - 40) + Math.sin(boss.frame) * 100;
+    const centerX = canvas.width - 120;
+    const centerY = canvas.height / 2 - 40;
+    // Movimento horizontal e vertical mais complexo para dar mais vida
+    const horizontalMovement = Math.cos(boss.frame * 0.5) * 30; // Deriva horizontal mais lenta
+    const verticalMovement = Math.sin(boss.frame * 0.8) * 100 + Math.sin(boss.frame * 1.5) * 20; // Flutuação vertical mais suave
+
+    boss.x = centerX + horizontalMovement;
+    boss.y = centerY + verticalMovement;
 
     // Sistema de Recompensa por Sobrevivência (a cada 5s)
     if (!gameProps.isGameOver) {
@@ -66,11 +81,16 @@ export function updateBoss(bird, onCollision) {
     boss.timer--;
     if (boss.timer <= 0) {
         if (boss.state === 'idle') {
+            const isEnraged = boss.hp / boss.maxHp < 0.4;
             // Escolhe um ataque aleatório
-            const attacks = ['attack1', 'attack3', 'attack4', 'attack5'];
+            let attacks = ['attack1', 'attack3', 'attack4', 'attack5'];
+            // Se estiver "violento", adiciona o novo ataque com mais chance
+            if (isEnraged) {
+                attacks.push('attack6', 'attack6', 'attack6'); // Ataque de shotgun
+            }
             boss.state = attacks[Math.floor(Math.random() * attacks.length)];
             boss.attackTimer = 0;
-            boss.timer = 240; // Duração do ataque (~4s)
+            boss.timer = isEnraged ? 180 : 240; // Ataques mais rápidos quando violento
         } else {
             boss.state = 'idle';
             boss.timer = 60; // Descanso (~1s)
@@ -126,6 +146,25 @@ export function updateBoss(bird, onCollision) {
         }
     }
 
+    // NOVO ATAQUE 6: Rajada de Projéteis (Shotgun) - Apenas quando violento
+    if (boss.state === 'attack6') {
+        // Dispara duas rajadas durante o ataque
+        if (boss.attackTimer === 40 || boss.attackTimer === 100) {
+            playExplosion(); // Reutiliza o som de explosão para impacto
+            triggerScreenShake(8, 15);
+            // Dispara 8 projéteis em um leque
+            for (let i = 0; i < 8; i++) {
+                const angle = (Math.random() - 0.5) * (Math.PI / 2.5) - Math.PI; // Leque de ~72 graus para trás
+                boss.projectiles.push({
+                    x: boss.x, y: boss.y + 40,
+                    vx: Math.cos(angle) * (7 + Math.random() * 2), // Projéteis rápidos
+                    vy: Math.sin(angle) * (7 + Math.random() * 2),
+                    size: 9, type: 'orb_enraged'
+                });
+            }
+        }
+    }
+
     // Atualizar Lasers
     boss.lasers.forEach((l, i) => {
         if (l.warning) {
@@ -156,26 +195,47 @@ export function updateBoss(bird, onCollision) {
 
         // Player shot hitting boss
         if ((p.type === 'player_shot' || p.type === 'player_shot_red') && p.x > boss.x && p.x < boss.x + boss.width && p.y > boss.y && p.y < boss.y + boss.height) {
-            const damage = p.type === 'player_shot_red' ? 50 : 25; // Dano dobrado se for vermelho
+            const damage = p.type === 'player_shot_red' ? 50.6 : 25.3; // Dano dobrado se for vermelho, aumentado em 1.2%
             boss.hp -= damage;
             boss.hitTimer = 10;
+            playExplosion(); // Adiciona um som de impacto
+            // Cria partículas no local do impacto
+            const particleColor = p.type === 'player_shot_red' ? '#FF4500' : '#FFFFFF';
+            createParticles(p.x, p.y, particleColor, 15);
             boss.projectiles.splice(i, 1);
             i--;
             continue;
         }
-
-        // Colisão Projétil
+        
+        // Colisão Projétil com jogador ou escudo
         const dx = (bird.x + bird.width/2) - p.x;
         const dy = (bird.y + bird.height/2) - p.y;
         const distance = Math.sqrt(dx*dx + dy*dy);
+        const birdHitboxRadius = bird.width / 2;
+        const shieldHitboxRadius = 45; // Raio do escudo visual em bird.js
 
-        if (p.type === 'freeze_orb' && distance < p.size + bird.width/2) {
-            gameProps.isFrozen = true;
-            gameProps.freezeTimer = 60; // 1 segundo
-        }
+        if (p.type !== 'player_shot' && p.type !== 'player_shot_red') {
+            // Colisão com o escudo do jogador
+            if (gameProps.isPlayerShieldActive && distance < p.size + shieldHitboxRadius) {
+                createParticles(p.x, p.y, '#FFFFFF', 15); // Partículas de impacto no escudo
+                playExplosion(); // Som de impacto
+                boss.projectiles.splice(i, 1);
+                i--;
+                continue; // Projétil destruído, próximo
+            }
 
-        if (p.type !== 'player_shot' && !gameProps.isImmune && Math.sqrt(dx*dx + dy*dy) < p.size + bird.width/2) {
-            onCollision();
+            // Colisão com o jogador (pássaro)
+            if (distance < p.size + birdHitboxRadius) {
+                if (p.type === 'freeze_orb' && !gameProps.isImmune) {
+                    gameProps.isFrozen = true;
+                    gameProps.freezeTimer = 60; // 1 segundo
+                } else if (!gameProps.isImmune) {
+                    onCollision();
+                }
+                boss.projectiles.splice(i, 1); // Remove o projétil após a colisão
+                i--;
+                continue;
+            }
         }
 
         if (p.x < -50 || p.y < -50 || p.y > canvas.height + 50) {
@@ -217,6 +277,8 @@ function defeatBoss(onCollision) {
 export function drawBoss() {
     if (!boss.active || boss.isDefeated) return;
 
+    const isEnraged = boss.hp / boss.maxHp < 0.4; // Boss fica "violento" com menos de 40% de vida
+
     // Desenhar Lasers
     boss.lasers.forEach(l => {
         if (l.warning) {
@@ -234,6 +296,8 @@ export function drawBoss() {
     boss.projectiles.forEach(p => {
         if (p.type === 'freeze_orb') {
             ctx.fillStyle = '#ADD8E6'; // Light Blue
+        } else if (p.type === 'orb_enraged') {
+            ctx.fillStyle = '#FF3300'; // Vermelho-Laranja intenso
         } else {
             ctx.fillStyle = (p.type === 'player_shot' || p.type === 'player_shot_red') ? (p.type === 'player_shot_red' ? '#FF0000' : '#00FFFF') : '#FF00FF';
         }
@@ -268,22 +332,107 @@ export function drawBoss() {
     }
 
     // Desenhar Boss (Fantasma Gigante)
+    let bossColor = '#FFF';
     if (boss.hitTimer > 0) {
-        ctx.fillStyle = 'red';
-    } else {
-        ctx.fillStyle = '#FFF';
+        bossColor = 'red';
+    } else if (isEnraged) {
+        // Cor pulsante entre branco e um vermelho claro quando violento
+        const phase = Math.sin(boss.frame * 4); // Pulsação mais rápida
+        const r = 255;
+        const g = 255 - (155 * (1 + phase) / 2); // 255 -> 100
+        const b = 255 - (155 * (1 + phase) / 2); // 255 -> 100
+        bossColor = `rgb(${r},${g},${b})`;
     }
+    ctx.fillStyle = bossColor;
+
+    if (isEnraged) {
+        ctx.shadowColor = '#FF0000';
+        ctx.shadowBlur = 25;
+    } else {
+        // Efeito de aura/fumaça fantasmagórica pulsante
+        const auraPulse = 0.6 + (Math.sin(boss.frame * 1.5) + 1) / 5; // Varia entre 0.6 e 1.0
+        ctx.shadowColor = `rgba(180, 150, 255, ${0.3 * auraPulse})`; // Alpha pulsante
+        ctx.shadowBlur = 20 + 15 * auraPulse; // Blur pulsante
+    }
+
     ctx.beginPath();
-    ctx.arc(boss.x + 40, boss.y + 40, 40, Math.PI, 0);
-    ctx.lineTo(boss.x + 80, boss.y + 100);
-    ctx.lineTo(boss.x, boss.y + 100);
-    ctx.fill();
-    
+    // Cabeça
+    ctx.arc(boss.x + 40, boss.y + 40, 40, Math.PI, 0); // Topo arredondado
+
+    // Corpo e base ondulada com animação de tecido fluida
+    const bottomY = boss.y + 100;
+    const segments = 16; // Mais segmentos para uma curva mais suave
+    const waveSpeed = isEnraged ? 4.8 : 2.4;
+    const waveAmplitude = isEnraged ? 24 : 16;
+    const vx = boss.x - boss.prevX;
+    const vy = boss.y - boss.prevY;
+
+    const points = [];
+    for (let i = 0; i <= segments; i++) {
+        const percent = i / segments; // 0 = direita, 1 = esquerda
+        const currentX = boss.x + boss.width * (1 - percent);
+
+        // Ondulação base com senos combinados para um efeito mais caótico e orgânico
+        const wave1 = Math.sin(boss.frame * waveSpeed + i * 0.5) * waveAmplitude * (0.6 + (1 - percent) * 0.4);
+        const wave2 = Math.sin(boss.frame * waveSpeed * 0.7 + i * 0.9) * (waveAmplitude * 0.7);
+        const wave3 = Math.cos(boss.frame * waveSpeed * 1.2 + i * 0.4) * (waveAmplitude * 0.5);
+
+        // Fator de arrasto (drag) - mais forte no meio, zero nas pontas
+        const dragFactor = Math.sin(percent * Math.PI);
+        // Arrasto vertical: se o boss desce (vy > 0), o tecido sobe (offset Y negativo)
+        const verticalDrag = -vy * 3 * dragFactor; // Reduzido para tornar mais suave
+        // Arrasto horizontal: simula a inércia do tecido para os lados
+        const horizontalDrag = -vx * 5 * dragFactor;
+
+        const currentY = bottomY + wave1 + wave2 + wave3 + verticalDrag;
+        points.push({ x: currentX + horizontalDrag, y: currentY });
+    }
+
+    // Lado direito do corpo
+    ctx.lineTo(boss.x + boss.width, bottomY);
+    ctx.lineTo(points[0].x, points[0].y); // Conecta ao primeiro ponto da base
+    for (let i = 1; i < points.length - 2; i++) {
+        const xc = (points[i].x + points[i + 1].x) / 2;
+        const yc = (points[i].y + points[i + 1].y) / 2;
+        ctx.quadraticCurveTo(points[i].x, points[i].y, xc, yc);
+    }
+    ctx.quadraticCurveTo(points[points.length - 2].x, points[points.length - 2].y, points[points.length - 1].x, points[points.length - 1].y);
+
+    ctx.closePath(); // Fecha o caminho de volta ao início do arco (lado esquerdo da cabeça)
+
+    // Efeito de Glitch ocasional
+    if (Math.random() < 0.03 && !gameProps.isGameOver) {
+        playGlitch();
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+
+        // Canal Magenta
+        ctx.fillStyle = 'rgba(255, 0, 255, 0.5)';
+        ctx.save();
+        ctx.translate((Math.random() - 0.5) * 10, (Math.random() - 0.5) * 10);
+        ctx.fill(); // Preenche o caminho atual
+        ctx.restore();
+
+        // Canal Ciano
+        ctx.fillStyle = 'rgba(0, 255, 255, 0.5)';
+        ctx.translate((Math.random() - 0.5) * 10, (Math.random() - 0.5) * 10);
+        ctx.fill(); // Preenche o caminho atual novamente
+
+        ctx.restore();
+    } else {
+        ctx.fill(); // O preenchimento principal
+    }
+    ctx.shadowBlur = 0; // Resetar sombra
+
     // Olhos do Boss
-    ctx.fillStyle = '#F00';
+    const eyeSizeBase = isEnraged ? 14 : 10;
+    const eyePulseSpeed = isEnraged ? 5 : 2;
+    const eyePulseAmplitude = isEnraged ? 4 : 2;
+    const eyeSize = eyeSizeBase + Math.sin(boss.frame * eyePulseSpeed) * eyePulseAmplitude; // Animação de pulsar mais agressiva
+    ctx.fillStyle = isEnraged ? '#FF4500' : '#F00';
     ctx.beginPath();
-    ctx.arc(boss.x + 25, boss.y + 30, 10, 0, Math.PI * 2);
-    ctx.arc(boss.x + 55, boss.y + 30, 10, 0, Math.PI * 2);
+    ctx.arc(boss.x + 25, boss.y + 30, eyeSize, 0, Math.PI * 2);
+    ctx.arc(boss.x + 55, boss.y + 30, eyeSize, 0, Math.PI * 2);
     ctx.fill();
 
     // Barra de Vida do Boss

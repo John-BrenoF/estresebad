@@ -28,7 +28,7 @@ export function drawScore() {
 
     // Desenhar Moedas
     ctx.fillStyle = '#8A2BE2'; // Roxo
-    ctx.fillText("💰 " + gameProps.currentCoins, 10, 40);
+    ctx.fillText("🪙n" + gameProps.currentCoins, 10, 40);
 
     // UI da Carta de Imunidade
     if (gameProps.shopData) {

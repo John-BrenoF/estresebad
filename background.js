@@ -49,8 +49,8 @@ export function initBackground() {
         stars.push({
             x: Math.random() * canvas.width,
             y: Math.random() * (canvas.height - 200),
-            size: Math.random() * 2 + 0.5,
-            speedFactor: Math.random() * 0.2 + 0.05
+            size: Math.random() * 1.5 + 0.5,
+            speedFactor: Math.random() * 0.1 + 0.05 // Mais lento para mais profundidade
         });
     }
 
@@ -118,7 +118,7 @@ export function initBackground() {
         const cloud = {
             x: Math.random() * canvas.width * 2,
             y: 50 + Math.random() * 150,
-            speedFactor: (Math.random() * 0.1) + 0.02, // Slower speed
+            speedFactor: (Math.random() * 0.1) + 0.1, // Um pouco mais rápido
             parts: []
         };
         const numParts = 3 + Math.floor(Math.random() * 4);
@@ -218,6 +218,9 @@ export function updateAndDrawBackground() {
 
     const pX = gameProps.deviceOffsetX || 0;
     const pY = gameProps.deviceOffsetY || 0;
+    // Fatores de paralaxe para o giroscópio
+    const buildingParallaxX = pX * 1.2;
+    const buildingParallaxY = pY * 1.2;
 
     // --- REFLEXOS NA ÁGUA ---
     const waterY = canvas.height - 60; // Nível da água
@@ -277,7 +280,7 @@ export function updateAndDrawBackground() {
         if (b.color) {
             ctx.fillStyle = b.color;
             ctx.globalAlpha = 0.2;
-            ctx.fillRect(b.x + pX, b.y + pY, b.width + 1, b.height);
+            ctx.fillRect(b.x + buildingParallaxX, b.y + buildingParallaxY, b.width + 1, b.height);
         }
     });
     
@@ -289,18 +292,24 @@ export function updateAndDrawBackground() {
 
     // Ondas na superfície
     ctx.save();
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 1.5;
     const waveTime = Date.now() / 800;
-    for(let i=0; i<4; i++) {
-        const yWave = waterY + 15 + i * 12;
+
+    // Função para desenhar uma onda mais fluida
+    const drawSingleWave = (yBase, amplitude, frequency, speed, alpha) => {
+        ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
         ctx.beginPath();
-        for(let x=0; x<canvas.width; x+=20) {
-            const yOffset = Math.sin(x * 0.02 + waveTime + i) * 3;
-            ctx.lineTo(x, yWave + yOffset);
+        for (let x = 0; x <= canvas.width; x += 5) {
+            const yOffset = Math.sin(x * frequency + waveTime * speed) * amplitude;
+            ctx.lineTo(x, yBase + yOffset);
         }
         ctx.stroke();
-    }
+    };
+
+    // Desenha múltiplas camadas de ondas para dar profundidade e realismo
+    drawSingleWave(waterY + 20, 4, 0.03, 0.8, 0.15); // Fundo, lenta e sutil
+    drawSingleWave(waterY + 12, 6, 0.02, 1.2, 0.2);  // Meio
+    drawSingleWave(waterY + 5, 5, 0.025, 1.0, 0.25); // Frente, mais visível
     ctx.restore();
 
     // --- LÓGICA DA AURORA ---
@@ -327,7 +336,7 @@ export function updateAndDrawBackground() {
                 star.x -= gameProps.gameSpeed * star.speedFactor;
                 if (star.x < 0) star.x = canvas.width;
             }
-            ctx.fillRect(star.x + (pX * 0.5), star.y + (pY * 0.5), star.size, star.size);
+            ctx.fillRect(star.x + (pX * 0.2), star.y + (pY * 0.2), star.size, star.size);
         });
     }
 
@@ -437,8 +446,8 @@ export function updateAndDrawBackground() {
             }
 
             // Parallax para nuvens (movimento mais lento que os prédios)
-            const cloudParallaxX = pX * 0.7;
-            const cloudParallaxY = pY * 0.7;
+            const cloudParallaxX = pX * 0.8;
+            const cloudParallaxY = pY * 0.8;
 
             // Sombra da Nuvem (Offset)
             ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
@@ -551,13 +560,15 @@ export function updateAndDrawBackground() {
     ctx.fillStyle = mountain2Color;
     mountains2.forEach(m => {
         if (!gameProps.isGameOver) {
-            m.x -= gameProps.gameSpeed * 0.05; // Mais lento que montanhas 1
+            m.x -= gameProps.gameSpeed * 0.08; // Paralaxe: mais lento que montanhas 1
             if (m.x + m.width < 0) m.x += canvas.width * 2;
         }
+        const parallaxX = pX * 0.3;
+        const parallaxY = pY * 0.3;
         ctx.beginPath();
-        ctx.moveTo(m.x + pX * 0.15, m.y + pY * 0.15);
-        ctx.lineTo(m.x + m.width / 2 + pX * 0.15, m.y - m.height + pY * 0.15);
-        ctx.lineTo(m.x + m.width + pX * 0.15, m.y + pY * 0.15);
+        ctx.moveTo(m.x + parallaxX, m.y + parallaxY);
+        ctx.lineTo(m.x + m.width / 2 + parallaxX, m.y - m.height + parallaxY);
+        ctx.lineTo(m.x + m.width + parallaxX, m.y + parallaxY);
         ctx.fill();
     });
 
@@ -566,28 +577,29 @@ export function updateAndDrawBackground() {
     ctx.fillStyle = mountainColor;
     mountains.forEach(m => {
         if (!gameProps.isGameOver) {
-            m.x -= gameProps.gameSpeed * 0.1; // Muito lento
+            m.x -= gameProps.gameSpeed * 0.15; // Paralaxe: Lento
             if (m.x + m.width < 0) m.x += canvas.width * 2;
         }
+        const parallaxX = pX * 0.5;
+        const parallaxY = pY * 0.5;
         ctx.beginPath();
-        ctx.moveTo(m.x + pX * 0.3, m.y + pY * 0.3);
-        ctx.lineTo(m.x + m.width / 2 + pX * 0.3, m.y - m.height + pY * 0.3);
-        ctx.lineTo(m.x + m.width + pX * 0.3, m.y + pY * 0.3);
+        ctx.moveTo(m.x + parallaxX, m.y + parallaxY);
+        ctx.lineTo(m.x + m.width / 2 + parallaxX, m.y - m.height + parallaxY);
+        ctx.lineTo(m.x + m.width + parallaxX, m.y + parallaxY);
         ctx.fill();
     });
 
     // Desenhar e mover prédios (Paralaxe)
-    // const dayFactor = Math.sin(time * Math.PI); // 0 à noite, 1 de dia - já definido acima
     buildings.forEach(b => {
         if (!gameProps.isGameOver) {
-            b.x -= gameProps.gameSpeed * 0.3; // Movem-se a 30% da velocidade do jogo
+            b.x -= gameProps.gameSpeed * 0.5; // Paralaxe: Movem-se a 50% da velocidade do jogo
             if (b.x + b.width < 0) b.x += canvas.width * 2; // Recicla o prédio lá na frente
         }
         const nightColor = b.isLighter ? '#222' : '#1a1a1a';
         const dayColor = b.isLighter ? '#555' : '#4a4a4a';
         b.color = lerpColor(nightColor, dayColor, dayFactor);
         ctx.fillStyle = b.color;
-        ctx.fillRect(b.x + pX, b.y + pY, b.width + 1, b.height); // +1 para evitar linhas brancas entre prédios
+        ctx.fillRect(b.x + buildingParallaxX, b.y + buildingParallaxY, b.width + 1, b.height); // +1 para evitar linhas brancas entre prédios
         
         // Desenhar Janelas
         // À noite (time < 0.25 ou > 0.75), as janelas acendem (amarelo claro)
@@ -597,7 +609,7 @@ export function updateAndDrawBackground() {
         
         ctx.fillStyle = windowColor;
         b.windows.forEach(w => {
-            ctx.fillRect(b.x + pX + w.x, b.y + pY + w.y, w.w, w.h);
+            ctx.fillRect(b.x + buildingParallaxX + w.x, b.y + buildingParallaxY + w.y, w.w, w.h);
         });
     });
 

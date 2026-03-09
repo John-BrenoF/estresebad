@@ -5,7 +5,7 @@ body {
     justify-content: center;
     align-items: center;
     height: 100vh;
-    background-color: #1a1a1a;
+    background-color: #000; /* Cor de fundo preto */
     font-family: 'Changa', sans-serif;
     overflow: hidden;
 }
@@ -24,3 +24,4 @@ canvas {
     text-align: center;
     pointer-events: none;
 }
+
