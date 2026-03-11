@@ -28,7 +28,7 @@ export function drawScore() {
 
     // Desenhar Moedas
     ctx.fillStyle = '#8A2BE2'; // Roxo
-    ctx.fillText("🪙n" + gameProps.currentCoins, 10, 40);
+    ctx.fillText("🪙" + gameProps.currentCoins, 10, 40);
 
     // UI da Carta de Imunidade
     if (gameProps.shopData) {
@@ -271,10 +271,10 @@ export function drawStartScreen() {
     // Título Pulsante
     const scale = 1 + Math.sin(Date.now() / 500) * 0.05;
     ctx.save();
-    ctx.translate(canvas.width / 2, canvas.height / 2 - 120);
+    ctx.translate(canvas.width / 2, canvas.height / 2 - 130);
     ctx.scale(scale, scale);
     ctx.fillStyle = '#8A2BE2'; // Roxo
-    ctx.font = "bold 45px Changa";
+    ctx.font = "60px 'Rubik Glitch'";
     ctx.textAlign = "center";
 
     // Efeito Glitch no Título (looping)
@@ -284,14 +284,14 @@ export function drawStartScreen() {
         ctx.save();
         ctx.globalCompositeOperation = 'screen';
         ctx.fillStyle = 'rgba(255, 0, 0, 0.7)';
-        ctx.fillText("MORCEGO FLAP", xOff, yOff);
-        ctx.fillStyle = 'rgba(0, 255, 255, 0.7)';
-        ctx.fillText("MORCEGO FLAP", -xOff, -yOff);
+        ctx.fillText("Ǝstr⑇ƨƨeβad", xOff, yOff);
+        ctx.fillStyle = 'rgba(0, 255, 255, 0.89)';
+        ctx.fillText("EsȾr ⃔ ⃕ ⃖  ⃠esƨeƁ⑆d", -xOff, -yOff);
         ctx.restore();
     }
 
     ctx.fillStyle = '#8A2BE2'; // Roxo
-    ctx.fillText("MORCEGO FLAP", 0, 0);
+    ctx.fillText("Estressebad", 0, 0);
     ctx.restore();
     
     ctx.textAlign = "center"; // Centraliza o texto para todos os botões
