@@ -4,9 +4,10 @@ import { getHighScores } from './storage.js';
 export const attackButtonRect = { x: 20, y: canvas.height - 150, w: 70, h: 70 };
 export const shieldButtonRect = { x: canvas.width - 90, y: canvas.height - 150, w: 70, h: 70 };
 export const furyButtonRect = { x: canvas.width - 90, y: canvas.height - 230, w: 70, h: 70 };
+export const menuReturnButtonRect = { x: 20, y: 20, w: 80, h: 40 };
 
 // Helper para desenhar fundo borrado (Glassmorphism)
-function drawBackdropBlur() {
+export function drawBackdropBlur() {
     ctx.save();
     // Aplica o blur no conteúdo atual do canvas
     ctx.filter = 'blur(6px)';
@@ -216,6 +217,14 @@ export function drawWaitingScreen() {
 export function drawGameOverScreen() {
     drawBackdropBlur();
     
+    // Botão Discreto para Voltar ao Menu
+    ctx.save();
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+    ctx.font = 'bold 18px Changa';
+    ctx.textAlign = 'left';
+    ctx.fillText('🏠 MENU', menuReturnButtonRect.x, menuReturnButtonRect.y + 25);
+    ctx.restore();
+    
     let currentY = 200;
 
     ctx.fillStyle = '#8A2BE2'; // Roxo
@@ -264,7 +273,7 @@ const shopButton = { x: canvas.width / 2 - 125, y: canvas.height / 2 + 150, w: 1
 const missionsButton = { x: canvas.width / 2 + 5, y: canvas.height / 2 + 150, w: 120, h: 50 };
 
 // Função auxiliar para desenhar botões 3D
-function draw3DButton(rect, color, text, fontSize = "30px") {
+export function draw3DButton(rect, color, text, fontSize = "30px") {
     // Sombra (Profundidade)
     ctx.fillStyle = 'rgba(0,0,0,0.5)';
     ctx.fillRect(rect.x + 4, rect.y + 4, rect.w, rect.h);

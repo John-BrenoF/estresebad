@@ -1,6 +1,8 @@
 import { ctx, canvas, gameProps } from './state.js';
 import { saveTotalCoins, getTotalCoins } from './storage.js';
 import { playGlitch } from './audio.js';
+import { drawBackdropBlur, draw3DButton } from './ui.js';
+import { createParticles } from './particles.js';
 
 const MISSION_TYPES = [
     { id: 'score', text: 'Alcance a pontuação de', value: [20, 8, 30], icon: '🏆' },
@@ -23,6 +25,7 @@ let dailyMissions = [];
 let scrollY = 0;
 const CARD_HEIGHT = 100;
 const CARD_GAP = 20;
+const closeButtonRect = { x: canvas.width / 2 - 75, y: canvas.height - 70, w: 150, h: 50 };
 
 function generateMissions() {
     const missions = [];
@@ -158,18 +161,16 @@ export function handleMissionScroll(e) {
 }
 
 export function drawMissionMap() {
-    // Fundo preto
+    drawBackdropBlur();
+
+    // Painel Central (Vidro Escuro)
     ctx.fillStyle = '#000000';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#000000';
-    ctx.globalAlpha = 0.95;
+    ctx.globalAlpha = 0.85;
     ctx.fillRect(20, 20, canvas.width - 40, canvas.height - 40);
     ctx.globalAlpha = 1.0;
     
     // Borda do painel
-    ctx.strokeStyle = '#888888'; // Cinza
-    ctx.lineWidth = 2;
-    ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
+    // (Removida borda simples para visual mais limpo ou usar strokeRect com neon se quiser)
 
     // Título
     ctx.fillStyle = '#8A2BE2'; // Roxo
@@ -197,14 +198,25 @@ export function drawMissionMap() {
         const x = 40;
         const w = canvas.width - 80;
 
-        // Fundo do Card
-        ctx.fillStyle = mission.completed ? (mission.claimed ? '#222' : '#330033') : '#333'; // Fundo preto/roxo escuro
+        // Fundo do Card (Gradiente)
+        const cardGrad = ctx.createLinearGradient(x, y, x + w, y + CARD_HEIGHT);
+        if (mission.completed && !mission.claimed) {
+             cardGrad.addColorStop(0, '#4B0082'); // Índigo
+             cardGrad.addColorStop(1, '#330033'); // Roxo escuro
+        } else {
+             cardGrad.addColorStop(0, '#2b2b2b');
+             cardGrad.addColorStop(1, '#1a1a1a');
+        }
+        
+        ctx.fillStyle = cardGrad;
+        // Sombra suave
+        ctx.shadowColor = '#000';
+        ctx.shadowBlur = 5;
         ctx.fillRect(x, y, w, CARD_HEIGHT);
+        ctx.shadowBlur = 0;
         
         // Borda do Card
-        ctx.strokeStyle = mission.completed ? (mission.claimed ? '#888888' : '#6A0DAD') : '#888888'; // Bordas cinza/roxa
-        ctx.lineWidth = 2;
-        ctx.strokeRect(x, y, w, CARD_HEIGHT);
+        // Simplificado: Sem borda grossa, apenas cor de fundo distinta
 
         // Lógica de Segredo
         let displayIcon = mission.icon;
@@ -234,31 +246,43 @@ export function drawMissionMap() {
         const barX = x + 60;
         const barY = y + 45;
         
+        // Fundo da barra
+        ctx.fillStyle = '#111';
+        ctx.fillRect(barX, barY, barWidth, barHeight);
+        
         let progressPercent = Math.min(1, mission.progress / mission.target);
         if (isLockedSecret) {
             progressPercent = 0; // Esconde o progresso se estiver bloqueada
         }
 
-        ctx.fillStyle = '#111';
-        ctx.fillRect(barX, barY, barWidth, barHeight); // Fundo da barra
-        ctx.fillStyle = mission.completed ? '#6A0DAD' : '#6A0DAD'; // Barra de progresso roxa
-        ctx.fillRect(barX, barY, barWidth * progressPercent, barHeight); // Preenchimento
+        // Preenchimento da barra com brilho se completado
+        ctx.fillStyle = '#8A2BE2';
+        if (mission.completed && !mission.claimed) ctx.shadowColor = '#8A2BE2'; ctx.shadowBlur = 10;
+        ctx.fillRect(barX, barY, barWidth * progressPercent, barHeight); 
+        ctx.shadowBlur = 0;
 
         // Texto de Status / Botão
         ctx.font = "14px Changa";
         if (isLockedSecret) {
             ctx.fillStyle = '#AAA';
-            ctx.fillText(`Progresso Oculto`, x + 60, y + 80);
+            ctx.fillText(`Desafio Secreto`, x + 60, y + 80);
         } else if (mission.completed && !mission.claimed) {
             // Botão de Resgatar
-            ctx.fillStyle = '#8A2BE2'; // Roxo
-            ctx.fillText(`✨ CLIQUE PARA RESGATAR (+${mission.reward} 💰)`, x + 60, y + 80);
+            ctx.fillStyle = '#00FF00'; // Verde chamativo
+            ctx.fillText(`✨ TOQUE PARA RESGATAR (+${mission.reward} 💰)`, x + 60, y + 80);
         } else if (mission.claimed) {
             ctx.fillStyle = '#888';
             ctx.fillText('✅ Recompensa Coletada', x + 60, y + 80);
         } else {
             ctx.fillStyle = '#CCC';
             ctx.fillText(`Progresso: ${Math.floor(mission.progress)}/${mission.target} (+${mission.reward} 💰)`, x + 60, y + 80);
+        }
+        
+        // Borda de seleção para resgatar
+        if (mission.completed && !mission.claimed) {
+            ctx.strokeStyle = '#00FF00';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x, y, w, CARD_HEIGHT);
         }
     });
 
@@ -278,11 +302,8 @@ export function drawMissionMap() {
         ctx.fillRect(canvas.width - 15, 130 + thumbY, 10, thumbHeight);
     }
 
-    // Botão Voltar (Instrução)
-    ctx.fillStyle = '#FFF';
-    ctx.font = "16px Changa";
-    ctx.textAlign = "center";
-    ctx.fillText("Clique nas bordas para voltar", canvas.width / 2, canvas.height - 20);
+    // Botão Voltar
+    draw3DButton(closeButtonRect, '#FF4444', "VOLTAR", "24px");
 }
 
 export function handleMissionClick(x, y) {
@@ -297,12 +318,16 @@ export function handleMissionClick(x, y) {
             saveTotalCoins(mission.reward);
             gameProps.totalCoins = getTotalCoins(); // Update state
             playGlitch(); // Som de feedback
+            
+            // Efeito visual de partículas (Dourado/Verde) no centro do card
+            createParticles(x, y, '#00FF00', 30);
+            
             localStorage.setItem('morcegoFlap_missions', JSON.stringify(dailyMissions));
         }
     });
 
-    // Fechar ao clicar fora da área da lista (cabeçalho ou rodapé)
-    if (y < 130 || y > canvas.height - 50) {
+    // Fechar ao clicar no botão "Voltar"
+    if (x > closeButtonRect.x && x < closeButtonRect.x + closeButtonRect.w && y > closeButtonRect.y && y < closeButtonRect.y + closeButtonRect.h) {
         gameProps.isMissionMapOpen = false;
         gameProps.menuFadeInTimer = 30; // Ativa o fade-in para o menu principal
     }

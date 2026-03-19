@@ -4,7 +4,7 @@ import { checkHighScore, saveHighScore, saveTotalCoins, saveShopData, getShopDat
 import { bird } from './bird.js';
 import { pipes, updatePipes, drawPipes } from './pipes.js';
 import { initMovingTube, updateMovingTube, drawMovingTube, movingTube } from './movingTube.js';
-import { drawScore, drawWaitingScreen, drawGameOverScreen, drawStartScreen, handleMenuClick, attackButtonRect, shieldButtonRect, furyButtonRect } from './ui.js';
+import { drawScore, drawWaitingScreen, drawGameOverScreen, drawStartScreen, handleMenuClick, attackButtonRect, shieldButtonRect, furyButtonRect, menuReturnButtonRect } from './ui.js';
 import { playDie, playShield, playSlowMo, playBossMusic, stopBossMusic, playPlayerAttack, playPlayerRedShot, playBossDefeated, playPlayerShield, playNormalMusic, stopNormalMusic, resumeAudio, playGlitch, playPowerupSound } from './audio.js';
 import { createParticles, updateAndDrawParticles, clearParticles } from './particles.js';
 import { initBackground, updateAndDrawBackground } from './background.js';
@@ -646,6 +646,15 @@ function handleInput(e) {
     if (gameProps.isGameOver) {
         // Impede reiniciar se morreu há menos de 1 segundo (evita cliques acidentais)
         if (Date.now() - gameProps.lastDeathTime < 1000) return;
+        
+        // Verifica clique no botão de voltar ao menu (Minimalista)
+        if (isAction && x > menuReturnButtonRect.x && x < menuReturnButtonRect.x + menuReturnButtonRect.w &&
+            y > menuReturnButtonRect.y && y < menuReturnButtonRect.y + menuReturnButtonRect.h) {
+            gameProps.isGameOver = false;
+            gameProps.isInMenu = true;
+            gameProps.menuFadeInTimer = 30;
+            return;
+        }
         
         if (isAction || (e.type === 'keydown' && e.code === 'Space')) {
             playGlitch(); // Som de clique ao reiniciar
