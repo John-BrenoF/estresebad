@@ -5,6 +5,9 @@ export const attackButtonRect = { x: 20, y: canvas.height - 150, w: 70, h: 70 };
 export const shieldButtonRect = { x: canvas.width - 90, y: canvas.height - 150, w: 70, h: 70 };
 export const furyButtonRect = { x: canvas.width - 90, y: canvas.height - 230, w: 70, h: 70 };
 export const menuReturnButtonRect = { x: 20, y: 20, w: 80, h: 40 };
+export const immunityButtonRect = { x: 20, y: canvas.height - 70, w: 50, h: 50 };
+export const magnetButtonRect = { x: 80, y: canvas.height - 70, w: 50, h: 50 };
+export const slowMoButtonRect = { x: 140, y: canvas.height - 70, w: 50, h: 50 };
 
 // Helper para desenhar fundo borrado (Glassmorphism)
 export function drawBackdropBlur() {
@@ -76,39 +79,70 @@ export function drawScore() {
             ctx.fillText('HARDCORE', canvas.width - 120, 20);
             return; // Não mostra outros powerups no modo hardcore
         }
-        ctx.fillStyle = '#FFF';
-        ctx.fillText(`Imune [E]: ${gameProps.shopData.immunityCards}`, canvas.width - 120, 20);
+        
+        // --- Botão de Imunidade [E] (Mobile/Bottom) ---
+        if (gameProps.shopData.immunityCards > 0) {
+            ctx.fillStyle = gameProps.cardCooldownTimer > 0 ? 'rgba(100, 100, 100, 0.5)' : 'rgba(138, 43, 226, 0.5)';
+            ctx.fillRect(immunityButtonRect.x, immunityButtonRect.y, immunityButtonRect.w, immunityButtonRect.h);
+            
+            ctx.strokeStyle = '#FFF';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(immunityButtonRect.x, immunityButtonRect.y, immunityButtonRect.w, immunityButtonRect.h);
+            
+            ctx.fillStyle = '#FFF';
+            ctx.textAlign = "center";
+            ctx.font = "24px Changa";
+            ctx.fillText("🛡️", immunityButtonRect.x + 25, immunityButtonRect.y + 35);
+            
+            // Contador
+            ctx.fillStyle = '#00FFFF';
+            ctx.font = "bold 14px Changa";
+            ctx.textAlign = "right";
+            ctx.fillText(gameProps.shopData.immunityCards, immunityButtonRect.x + 45, immunityButtonRect.y + 15);
+        }
+        
         if (gameProps.isImmune) {
             ctx.fillStyle = '#8A2BE2'; // Roxo
-            ctx.fillText(`ATIVO!`, canvas.width - 120, 40);
-        } else if (gameProps.cardCooldownTimer > 0) {
-            ctx.fillStyle = '#FF6B6B';
-            const cooldown = (gameProps.cardCooldownTimer / 60).toFixed(1);
-            ctx.fillText(`Recarga: ${cooldown}s`, canvas.width - 120, 40);
+            ctx.textAlign = "left";
+            ctx.fillText(`ESCUDO ATIVO!`, 20, canvas.height - 80);
         }
 
-        // UI do Ímã
-        ctx.fillStyle = '#FFF';
-        ctx.fillText(`Ímã [M]`, canvas.width - 120, 60);
+        // --- Botão de Ímã [M] ---
+        ctx.fillStyle = gameProps.magnetCooldownTimer > 0 ? 'rgba(100, 100, 100, 0.5)' : 'rgba(255, 215, 0, 0.5)';
+        ctx.fillRect(magnetButtonRect.x, magnetButtonRect.y, magnetButtonRect.w, magnetButtonRect.h);
+        ctx.strokeStyle = '#FFF';
+        ctx.strokeRect(magnetButtonRect.x, magnetButtonRect.y, magnetButtonRect.w, magnetButtonRect.h);
+        ctx.textAlign = "center";
+        ctx.font = "24px Changa";
+        ctx.fillText("🧲", magnetButtonRect.x + 25, magnetButtonRect.y + 35);
+
         if (gameProps.isMagnetActive) {
             ctx.fillStyle = '#8A2BE2'; // Roxo
-            ctx.fillText(`ATIVO!`, canvas.width - 120, 80);
-        } else if (gameProps.magnetCooldownTimer > 0) {
-            ctx.fillStyle = '#FF6B6B';
-            const cooldown = (gameProps.magnetCooldownTimer / 60).toFixed(1);
-            ctx.fillText(`Recarga: ${cooldown}s`, canvas.width - 120, 80);
+            ctx.textAlign = "left";
+            ctx.fillText(`ÍMÃ ATIVO!`, 80, canvas.height - 80);
         }
 
-        // UI do Slow-Mo
-        ctx.fillStyle = '#FFF';
-        ctx.fillText(`Slow-Mo [T]: ${gameProps.shopData.slowMoCharges}`, canvas.width - 120, 100);
+        // --- Botão de Slow-Mo [T] ---
+        if (gameProps.shopData.slowMoCharges > 0) {
+            ctx.fillStyle = gameProps.slowMoCooldownTimer > 0 ? 'rgba(100, 100, 100, 0.5)' : 'rgba(0, 191, 255, 0.5)';
+            ctx.fillRect(slowMoButtonRect.x, slowMoButtonRect.y, slowMoButtonRect.w, slowMoButtonRect.h);
+            ctx.strokeStyle = '#FFF';
+            ctx.strokeRect(slowMoButtonRect.x, slowMoButtonRect.y, slowMoButtonRect.w, slowMoButtonRect.h);
+            ctx.textAlign = "center";
+            ctx.font = "24px Changa";
+            ctx.fillText("⏰", slowMoButtonRect.x + 25, slowMoButtonRect.y + 32);
+
+            // Contador
+            ctx.fillStyle = '#00FFFF';
+            ctx.font = "bold 14px Changa";
+            ctx.textAlign = "right";
+            ctx.fillText(gameProps.shopData.slowMoCharges, slowMoButtonRect.x + 45, slowMoButtonRect.y + 15);
+        }
+        
         if (gameProps.isSlowMoActive) {
             ctx.fillStyle = '#8A2BE2'; // Roxo
-            ctx.fillText(`ATIVO!`, canvas.width - 120, 120);
-        } else if (gameProps.slowMoCooldownTimer > 0) {
-            ctx.fillStyle = '#FF6B6B';
-            const cooldown = (gameProps.slowMoCooldownTimer / 60).toFixed(1);
-            ctx.fillText(`Recarga: ${cooldown}s`, canvas.width - 120, 120);
+            ctx.textAlign = "left";
+            ctx.fillText(`SLOW-MO!`, 140, canvas.height - 80);
         }
 
         // UI do Player Attack (somente no modo boss)
@@ -329,14 +363,14 @@ export function drawStartScreen() {
         ctx.save();
         ctx.globalCompositeOperation = 'screen';
         ctx.fillStyle = 'rgba(255, 0, 0, 0.7)';
-        ctx.fillText("estrebad", xOff, yOff);
+        ctx.fillText("MORCEGO FLAP", xOff, yOff);
         ctx.fillStyle = 'rgba(0, 255, 255, 0.7)';
-        ctx.fillText("estrebad", -xOff, -yOff);
+        ctx.fillText("MORCEGO FLAP", -xOff, -yOff);
         ctx.restore();
     }
 
     ctx.fillStyle = '#8A2BE2'; // Roxo
-    ctx.fillText("estrebad", 0, 0);
+    ctx.fillText("MORCEGO FLAP", 0, 0);
     ctx.restore();
     
     ctx.textAlign = "center"; // Centraliza o texto para todos os botões

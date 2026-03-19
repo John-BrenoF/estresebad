@@ -4,7 +4,7 @@ import { checkHighScore, saveHighScore, saveTotalCoins, saveShopData, getShopDat
 import { bird } from './bird.js';
 import { pipes, updatePipes, drawPipes } from './pipes.js';
 import { initMovingTube, updateMovingTube, drawMovingTube, movingTube } from './movingTube.js';
-import { drawScore, drawWaitingScreen, drawGameOverScreen, drawStartScreen, handleMenuClick, attackButtonRect, shieldButtonRect, furyButtonRect, menuReturnButtonRect } from './ui.js';
+import { drawScore, drawWaitingScreen, drawGameOverScreen, drawStartScreen, handleMenuClick, attackButtonRect, shieldButtonRect, furyButtonRect, menuReturnButtonRect, immunityButtonRect, magnetButtonRect, slowMoButtonRect } from './ui.js';
 import { playDie, playShield, playSlowMo, playBossMusic, stopBossMusic, playPlayerAttack, playPlayerRedShot, playBossDefeated, playPlayerShield, playNormalMusic, stopNormalMusic, resumeAudio, playGlitch, playPowerupSound } from './audio.js';
 import { createParticles, updateAndDrawParticles, clearParticles } from './particles.js';
 import { initBackground, updateAndDrawBackground } from './background.js';
@@ -592,6 +592,24 @@ function handleInput(e) {
                 return;
             }
         }
+
+        // Botões de Power-ups (Mobile)
+        // Imunidade
+        if (gameProps.shopData.immunityCards > 0 && x > immunityButtonRect.x && x < immunityButtonRect.x + immunityButtonRect.w && y > immunityButtonRect.y && y < immunityButtonRect.y + immunityButtonRect.h) {
+            activateImmunityCard();
+            return;
+        }
+        // Ímã
+        if (x > magnetButtonRect.x && x < magnetButtonRect.x + magnetButtonRect.w && y > magnetButtonRect.y && y < magnetButtonRect.y + magnetButtonRect.h) {
+            activateMagnet();
+            return;
+        }
+        // Slow-Mo
+        if (gameProps.shopData.slowMoCharges > 0 && x > slowMoButtonRect.x && x < slowMoButtonRect.x + slowMoButtonRect.w && y > slowMoButtonRect.y && y < slowMoButtonRect.y + slowMoButtonRect.h) {
+            activateSlowMo();
+            return;
+        }
+
         // Se não clicou em botões, o código continuará para processar o pulo
     }
 
