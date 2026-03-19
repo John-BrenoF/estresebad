@@ -150,7 +150,7 @@ export function drawWaitingScreen() {
     ctx.fillStyle = '#8A2BE2'; // Roxo
     ctx.font = "bold 28px Changa";
     ctx.textAlign = "center";
-    ctx.fillText("⏰ AGUARDE!", canvas.width / 2, canvas.height / 2 - 60);
+    ctx.fillText("para quê a peça ?", canvas.width / 2, canvas.height / 2 - 60);
     
     ctx.fillStyle = '#8A2BE2'; // Roxo
     ctx.font = "bold 60px Changa";
@@ -158,23 +158,23 @@ export function drawWaitingScreen() {
     
     ctx.fillStyle = '#FFF';
     ctx.font = "16px Changa";
-    ctx.fillText("O jogo iniciará automaticamente", canvas.width / 2, canvas.height / 2 + 50);
-    ctx.fillText("após a contagem regressiva.", canvas.width / 2, canvas.height / 2 + 75);
+    ctx.fillText(" ", canvas.width / 2, canvas.height / 2 + 50);
+    ctx.fillText(" ", canvas.width / 2, canvas.height / 2 + 75);
     
-    ctx.fillStyle = '#8A2BE2'; // Roxo
-    ctx.font = "14px Changa";
-    let timeText = "";
-    if (gameProps.selectedDelay === 0.2) timeText = "Rápido! (0.2s)";
-    else if (gameProps.selectedDelay === 1) timeText = "Curto (1s)";
-    else if (gameProps.selectedDelay === 3) timeText = "Médio (3s)";
-    else if (gameProps.selectedDelay === 10) timeText = "Longo (10s)";
-    ctx.fillText("Tempo sorteado: " + timeText, canvas.width / 2, canvas.height / 2 + 110);
+    ctx.fillStyle = '#FFFFFF'; // branco
+    ctx.font = "11px Changa";
+    let timeText = "é normal erra durante a vida , mas vc já errou o tanto de 7 vidas em metade de uma";
+    if (gameProps.selectedDelay === 0.2) timeText = "eu te mantenho preso usando seu estresse ❤️";
+    else if (gameProps.selectedDelay === 1) timeText = "tu realmente é bom ?";
+    else if (gameProps.selectedDelay === 3) timeText = "o seu estresse te faz permanecer na e no ciclo de dopamina derrotado!";
+    else if (gameProps.selectedDelay === 10) timeText = "agora cada segundo demora um ano ?";
+    ctx.fillText(" " + timeText, canvas.width / 2, canvas.height / 2 + 110);
     
     ctx.textAlign = "left";
 }
 
 export function drawGameOverScreen() {
-    ctx.fillStyle = '#000000'; // Fundo preto
+    ctx.fillStyle = '#000000DE'; // Fundo preto
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
     let currentY = 200;
@@ -202,20 +202,18 @@ export function drawGameOverScreen() {
     // Estatísticas secundárias
     ctx.fillStyle = '#8A2BE2'; // Roxo
     ctx.font = "22px Changa";
-    ctx.fillText("💰 Moedas Coletadas: " + gameProps.currentCoins, canvas.width / 2, currentY);
+    ctx.fillText("🪙 " + gameProps.currentCoins, canvas.width / 2, currentY);
     
     currentY += 35;
     
     ctx.fillStyle = '#8A2BE2'; // Roxo
     ctx.font = "22px Changa";
-    ctx.fillText("⚡ Raios Sobrevividos: " + gameProps.lightningSurvived, canvas.width / 2, currentY);
 
     // Instruções na parte inferior
     ctx.fillStyle = '#AAAAAA'; // Cinza
     ctx.font = "18px Changa";
-    ctx.fillText("Clique ou Espaço para sortear tempo", canvas.width / 2, canvas.height - 80);
-    ctx.fillText("e iniciar nova partida", canvas.width / 2, canvas.height - 55);
-    ctx.fillText("Pressione 'L' para ir à Loja", canvas.width / 2, canvas.height - 30);
+    ctx.fillText(" ", canvas.width / 2, canvas.height - 80);
+    ctx.fillText(" ", canvas.width / 2, canvas.height - 55);
     
     ctx.textAlign = "left";
 }
@@ -269,12 +267,12 @@ export function drawStartScreen() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // Título Pulsante
-    const scale = 1 + Math.sin(Date.now() / 500) * 0.05;
+    const scale = 1 + Math.sin(Date.now() / 500) * 0.00;
     ctx.save();
-    ctx.translate(canvas.width / 2, canvas.height / 2 - 130);
+    ctx.translate(canvas.width / 2, canvas.height / 2 - 120);
     ctx.scale(scale, scale);
     ctx.fillStyle = '#8A2BE2'; // Roxo
-    ctx.font = "60px 'Rubik Glitch'";
+    ctx.font = "bold 45px Changa";
     ctx.textAlign = "center";
 
     // Efeito Glitch no Título (looping)
@@ -284,14 +282,14 @@ export function drawStartScreen() {
         ctx.save();
         ctx.globalCompositeOperation = 'screen';
         ctx.fillStyle = 'rgba(255, 0, 0, 0.7)';
-        ctx.fillText("Ǝstr⑇ƨƨeβad", xOff, yOff);
-        ctx.fillStyle = 'rgba(0, 255, 255, 0.89)';
-        ctx.fillText("EsȾr ⃔ ⃕ ⃖  ⃠esƨeƁ⑆d", -xOff, -yOff);
+        ctx.fillText("MORCEGO FLAP", xOff, yOff);
+        ctx.fillStyle = 'rgba(0, 255, 255, 0.7)';
+        ctx.fillText("MORCEGO FLAP", -xOff, -yOff);
         ctx.restore();
     }
 
     ctx.fillStyle = '#8A2BE2'; // Roxo
-    ctx.fillText("Estressebad", 0, 0);
+    ctx.fillText("MORCEGO FLAP", 0, 0);
     ctx.restore();
     
     ctx.textAlign = "center"; // Centraliza o texto para todos os botões

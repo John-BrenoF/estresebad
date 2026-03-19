@@ -485,11 +485,28 @@ function handleInput(e) {
     // Tenta retomar o contexto de áudio em qualquer interação do usuário
     resumeAudio();
 
+    // Normalização de input (Touch vs Mouse)
+    let clientX, clientY;
+    if (e.type === 'touchstart') {
+        if (e.touches && e.touches.length > 0) {
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        }
+    } else if (e.type === 'click' || e.type === 'wheel') {
+        clientX = e.clientX;
+        clientY = e.clientY;
+    }
+
+    // Calcular posição relativa ao canvas
+    let x, y;
+    if (clientX !== undefined && clientY !== undefined) {
+        const rect = canvas.getBoundingClientRect();
+        x = clientX - rect.left;
+        y = clientY - rect.top;
+    }
+
     if (gameProps.isShopOpen) {
         if (e.type === 'click') {
-            const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
             handleShopClick(x, y);
         }
         // Adiciona o listener de scroll apenas quando a loja está aberta
@@ -501,9 +518,6 @@ function handleInput(e) {
 
     if (gameProps.isMissionMapOpen) {
         if (e.type === 'click') {
-            const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
             handleMissionClick(x, y);
         }
         if (e.type === 'wheel') {
@@ -512,10 +526,16 @@ function handleInput(e) {
         return;
     }
 
-    if (gameProps.isInMenu && e.type === 'click') {
-        const rect = canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+    // Para Gameplay e Menu, usamos touchstart para resposta instantânea
+    const isAction = e.type === 'click' || e.type === 'touchstart';
+
+    // Prevenir comportamento padrão no touchstart (zoom, scroll, clique fantasma)
+    // Apenas se não estivermos na loja/missões
+    if (e.type === 'touchstart' && e.cancelable) {
+        e.preventDefault();
+    }
+
+    if (gameProps.isInMenu && isAction) {
         const action = handleMenuClick(x, y);
         if (action) playGlitch();
 
@@ -548,10 +568,7 @@ function handleInput(e) {
 
     // Botão de sair durante a partida
     const exitButtonRect = { x: canvas.width - 40, y: canvas.height - 40, w: 30, h: 30 };
-    if (!gameProps.isGameOver && !gameProps.isInMenu && e.type === 'click') {
-        const rect = canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+    if (!gameProps.isGameOver && !gameProps.isInMenu && isAction) {
         if (x > exitButtonRect.x && x < exitButtonRect.x + exitButtonRect.w && y > exitButtonRect.y && y < exitButtonRect.y + exitButtonRect.h) {
             gameOver();
             return;
@@ -575,7 +592,7 @@ function handleInput(e) {
                 return;
             }
         }
-        // Se não clicou em botões, permite o pulo (tap-to-jump)
+        // Se não clicou em botões, o código continuará para processar o pulo
     }
 
     if (e.type === 'keydown' && e.code === 'KeyL' && (gameProps.isInMenu || gameProps.isGameOver)) {
@@ -629,10 +646,15 @@ function handleInput(e) {
     if (gameProps.isGameOver) {
         // Impede reiniciar se morreu há menos de 1 segundo (evita cliques acidentais)
         if (Date.now() - gameProps.lastDeathTime < 1000) return;
-        playGlitch(); // Som de clique ao reiniciar
-        startWaitingPeriod();
+        
+        if (isAction || (e.type === 'keydown' && e.code === 'Space')) {
+            playGlitch(); // Som de clique ao reiniciar
+            startWaitingPeriod();
+        }
     } else {
-        bird.jumpAction();
+        if (isAction || (e.type === 'keydown' && e.code === 'Space')) {
+            bird.jumpAction();
+        }
     }
 }
 
@@ -640,10 +662,11 @@ document.addEventListener('keydown', handleInput);
 canvas.addEventListener('click', handleInput);
 canvas.addEventListener('wheel', handleInput);
 
-// Suporte a Scroll por Toque (Mobile)
+// Suporte a Scroll por Toque (Mobile) e Resposta Rápida (Jump)
 let touchStartY = 0;
 canvas.addEventListener('touchstart', (e) => {
     touchStartY = e.touches[0].clientY;
+    handleInput(e); // Passa o evento touchstart para processamento imediato
 }, { passive: false });
 
 canvas.addEventListener('touchmove', (e) => {

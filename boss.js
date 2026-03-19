@@ -11,7 +11,7 @@ export const boss = {
     height: 80,
     active: false,
     hp: 305,
-    maxHp: 305,
+    maxHp: 142.8,
     prevX: 0,
     prevY: 0,
     state: 'idle', // idle, attack1, attack2, attack3, attack4, attack5
@@ -107,7 +107,7 @@ export function updateBoss(bird, onCollision) {
             const yPos = Math.random() * (canvas.height - 50);
             triggerScreenShake(4, 15);
             playBossLaser();
-            boss.lasers.push({ x: 0, y: yPos, w: canvas.width, h: 40, warning: true, timer: 40 });
+            boss.lasers.push({ x: 0, y: yPos, w: canvas.width, h: 16, warning: true, timer: 16 });
         }
     }
     
@@ -117,8 +117,8 @@ export function updateBoss(bird, onCollision) {
             const angle = Math.atan2(bird.y - (boss.y + 40), bird.x - boss.x);
             boss.projectiles.push({
                 x: boss.x, y: boss.y + 40,
-                vx: Math.cos(angle) * 5, vy: Math.sin(angle) * 5,
-                size: 15, type: 'orb'
+                vx: Math.cos(angle) * 4, vy: Math.sin(angle) * 4,
+                size: 13, type: 'orb'
             });
         }
     }
@@ -139,9 +139,9 @@ export function updateBoss(bird, onCollision) {
     if (boss.state === 'attack5') {
         if (boss.attackTimer === 60) { // Dispara um único orbe lento
             boss.projectiles.push({
-                x: boss.x, y: boss.y + 40,
+                x: boss.x, y: boss.y + 42,
                 vx: -3, vy: 0,
-                size: 20, type: 'freeze_orb'
+                size: 23, type: 'freeze_orb'
             });
         }
     }
@@ -246,15 +246,15 @@ export function updateBoss(bird, onCollision) {
 
     // --- ATAQUE ESPECIAL: RAIO VERMELHO ---
     // Condições: Noite (time < 0.25 ou > 0.75) E Chovendo
-    const isNight = gameProps.timeOfDay < 0.25 || gameProps.timeOfDay > 0.75;
+    const isNight = gameProps.timeOfDay < 0.30 || gameProps.timeOfDay > 0.75;
     if (isNight && gameProps.isRaining) {
         // 0.5% de chance de acontecer (por frame)
-        if (Math.random() < 0.005) {
+        if (Math.random() < 0.010) {
             boss.redLightningTimer = 15; // Duração visual do raio
             playBossRedLightning();
             
             // 0.5% de chance de acertar o player
-            if (Math.random() < 0.005 && !gameProps.isImmune && !gameProps.isPlayerShieldActive) {
+            if (Math.random() < 0.009 && !gameProps.isImmune && !gameProps.isPlayerShieldActive) {
                 onCollision();
             }
         }
@@ -277,17 +277,17 @@ function defeatBoss(onCollision) {
 export function drawBoss() {
     if (!boss.active || boss.isDefeated) return;
 
-    const isEnraged = boss.hp / boss.maxHp < 0.4; // Boss fica "violento" com menos de 40% de vida
+    const isEnraged = boss.hp / boss.maxHp < 0.3; // Boss fica "violento" com menos de 30% de vida
 
     // Desenhar Lasers
     boss.lasers.forEach(l => {
         if (l.warning) {
-            ctx.fillStyle = `rgba(255, 0, 0, 0.3)`;
+            ctx.fillStyle = `red`;
             ctx.fillRect(l.x, l.y, l.w, l.h);
         } else {
-            ctx.fillStyle = `rgba(255, 100, 100, 0.8)`; // Borda vermelha
+            ctx.fillStyle = `red`; // Borda vermelha
             ctx.fillRect(l.x, l.y, l.w, l.h);
-            ctx.fillStyle = '#FFF'; // Centro branco
+            ctx.fillStyle = 'red'; // Centro branco
             ctx.fillRect(l.x + l.w*0.2, l.y + l.h*0.2, l.w*0.6, l.h*0.6);
         }
     });
@@ -332,15 +332,15 @@ export function drawBoss() {
     }
 
     // Desenhar Boss (Fantasma Gigante)
-    let bossColor = '#FFF';
+    let bossColor = '#000';
     if (boss.hitTimer > 0) {
         bossColor = 'red';
     } else if (isEnraged) {
         // Cor pulsante entre branco e um vermelho claro quando violento
-        const phase = Math.sin(boss.frame * 4); // Pulsação mais rápida
-        const r = 255;
-        const g = 255 - (155 * (1 + phase) / 2); // 255 -> 100
-        const b = 255 - (155 * (1 + phase) / 2); // 255 -> 100
+        const phase = Math.sin(boss.frame * 1); // Pulsação mais rápida
+        const r = black;
+        const g = black- (155 * (1 + phase) / 2); // 255 -> 100
+        const b = black- (195 * (1 + phase) / 2); // 255 -> 100
         bossColor = `rgb(${r},${g},${b})`;
     }
     ctx.fillStyle = bossColor;
@@ -350,9 +350,9 @@ export function drawBoss() {
         ctx.shadowBlur = 25;
     } else {
         // Efeito de aura/fumaça fantasmagórica pulsante
-        const auraPulse = 0.6 + (Math.sin(boss.frame * 1.5) + 1) / 5; // Varia entre 0.6 e 1.0
-        ctx.shadowColor = `rgba(180, 150, 255, ${0.3 * auraPulse})`; // Alpha pulsante
-        ctx.shadowBlur = 20 + 15 * auraPulse; // Blur pulsante
+        const auraPulse = 0.6 + (Math.sin(boss.frame * 19.5) + 1) / 5; // Varia entre 0.6 e 1.0
+        ctx.shadowColor = `rgba(10, 10, 10, 0.95), ${0.3 * auraPulse})`; // Alpha pulsante
+        ctx.shadowBlur = 0 + 15 * auraPulse; // Blur pulsante
     }
 
     ctx.beginPath();
@@ -360,8 +360,8 @@ export function drawBoss() {
     ctx.arc(boss.x + 40, boss.y + 40, 40, Math.PI, 0); // Topo arredondado
 
     // Corpo e base ondulada com animação de tecido fluida
-    const bottomY = boss.y + 100;
-    const segments = 16; // Mais segmentos para uma curva mais suave
+    const bottomY = boss.y + 120;
+    const segments = 120; // Mais segmentos para uma curva mais suave
     const waveSpeed = isEnraged ? 4.8 : 2.4;
     const waveAmplitude = isEnraged ? 24 : 16;
     const vx = boss.x - boss.prevX;
@@ -373,8 +373,8 @@ export function drawBoss() {
         const currentX = boss.x + boss.width * (1 - percent);
 
         // Ondulação base com senos combinados para um efeito mais caótico e orgânico
-        const wave1 = Math.sin(boss.frame * waveSpeed + i * 0.5) * waveAmplitude * (0.6 + (1 - percent) * 0.4);
-        const wave2 = Math.sin(boss.frame * waveSpeed * 0.7 + i * 0.9) * (waveAmplitude * 0.7);
+        const wave1 = Math.sin(boss.frame * waveSpeed + i * 0.5) * waveAmplitude * (0.3 + (1 - percent) * 0.4);
+        const wave2 = Math.sin(boss.frame * waveSpeed * 0.4 + i * 0.5) * (waveAmplitude * 0.7);
         const wave3 = Math.cos(boss.frame * waveSpeed * 1.2 + i * 0.4) * (waveAmplitude * 0.5);
 
         // Fator de arrasto (drag) - mais forte no meio, zero nas pontas
@@ -401,7 +401,7 @@ export function drawBoss() {
     ctx.closePath(); // Fecha o caminho de volta ao início do arco (lado esquerdo da cabeça)
 
     // Efeito de Glitch ocasional
-    if (Math.random() < 0.03 && !gameProps.isGameOver) {
+    if (Math.random() < 0.09 && !gameProps.isGameOver) {
         playGlitch();
         ctx.save();
         ctx.globalCompositeOperation = 'lighter';
