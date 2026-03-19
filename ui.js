@@ -329,14 +329,14 @@ export function drawStartScreen() {
         ctx.save();
         ctx.globalCompositeOperation = 'screen';
         ctx.fillStyle = 'rgba(255, 0, 0, 0.7)';
-        ctx.fillText("MORCEGO FLAP", xOff, yOff);
+        ctx.fillText("estrebad", xOff, yOff);
         ctx.fillStyle = 'rgba(0, 255, 255, 0.7)';
-        ctx.fillText("MORCEGO FLAP", -xOff, -yOff);
+        ctx.fillText("estrebad", -xOff, -yOff);
         ctx.restore();
     }
 
     ctx.fillStyle = '#8A2BE2'; // Roxo
-    ctx.fillText("MORCEGO FLAP", 0, 0);
+    ctx.fillText("estrebad", 0, 0);
     ctx.restore();
     
     ctx.textAlign = "center"; // Centraliza o texto para todos os botões
