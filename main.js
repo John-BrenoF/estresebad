@@ -595,17 +595,17 @@ function handleInput(e) {
 
         // Botões de Power-ups (Mobile)
         // Imunidade
-        if (gameProps.shopData.immunityCards > 0 && x > immunityButtonRect.x && x < immunityButtonRect.x + immunityButtonRect.w && y > immunityButtonRect.y && y < immunityButtonRect.y + immunityButtonRect.h) {
+        if (gameProps.shopData.immunityCards > 0 && gameProps.cardCooldownTimer <= 0 && x > immunityButtonRect.x && x < immunityButtonRect.x + immunityButtonRect.w && y > immunityButtonRect.y && y < immunityButtonRect.y + immunityButtonRect.h) {
             activateImmunityCard();
             return;
         }
         // Ímã
-        if (x > magnetButtonRect.x && x < magnetButtonRect.x + magnetButtonRect.w && y > magnetButtonRect.y && y < magnetButtonRect.y + magnetButtonRect.h) {
+        if (gameProps.magnetCooldownTimer <= 0 && x > magnetButtonRect.x && x < magnetButtonRect.x + magnetButtonRect.w && y > magnetButtonRect.y && y < magnetButtonRect.y + magnetButtonRect.h) {
             activateMagnet();
             return;
         }
         // Slow-Mo
-        if (gameProps.shopData.slowMoCharges > 0 && x > slowMoButtonRect.x && x < slowMoButtonRect.x + slowMoButtonRect.w && y > slowMoButtonRect.y && y < slowMoButtonRect.y + slowMoButtonRect.h) {
+        if (gameProps.shopData.slowMoCharges > 0 && gameProps.slowMoCooldownTimer <= 0 && x > slowMoButtonRect.x && x < slowMoButtonRect.x + slowMoButtonRect.w && y > slowMoButtonRect.y && y < slowMoButtonRect.y + slowMoButtonRect.h) {
             activateSlowMo();
             return;
         }

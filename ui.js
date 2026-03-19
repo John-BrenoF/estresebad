@@ -81,8 +81,8 @@ export function drawScore() {
         }
         
         // --- Botão de Imunidade [E] (Mobile/Bottom) ---
-        if (gameProps.shopData.immunityCards > 0) {
-            ctx.fillStyle = gameProps.cardCooldownTimer > 0 ? 'rgba(100, 100, 100, 0.5)' : 'rgba(138, 43, 226, 0.5)';
+        if (gameProps.shopData.immunityCards > 0 && gameProps.cardCooldownTimer <= 0 && !gameProps.isImmune) {
+            ctx.fillStyle = 'rgba(138, 43, 226, 0.5)';
             ctx.fillRect(immunityButtonRect.x, immunityButtonRect.y, immunityButtonRect.w, immunityButtonRect.h);
             
             ctx.strokeStyle = '#FFF';
@@ -108,13 +108,15 @@ export function drawScore() {
         }
 
         // --- Botão de Ímã [M] ---
-        ctx.fillStyle = gameProps.magnetCooldownTimer > 0 ? 'rgba(100, 100, 100, 0.5)' : 'rgba(255, 215, 0, 0.5)';
-        ctx.fillRect(magnetButtonRect.x, magnetButtonRect.y, magnetButtonRect.w, magnetButtonRect.h);
-        ctx.strokeStyle = '#FFF';
-        ctx.strokeRect(magnetButtonRect.x, magnetButtonRect.y, magnetButtonRect.w, magnetButtonRect.h);
-        ctx.textAlign = "center";
-        ctx.font = "24px Changa";
-        ctx.fillText("🧲", magnetButtonRect.x + 25, magnetButtonRect.y + 35);
+        if (gameProps.magnetCooldownTimer <= 0 && !gameProps.isMagnetActive) {
+            ctx.fillStyle = 'rgba(255, 215, 0, 0.5)';
+            ctx.fillRect(magnetButtonRect.x, magnetButtonRect.y, magnetButtonRect.w, magnetButtonRect.h);
+            ctx.strokeStyle = '#FFF';
+            ctx.strokeRect(magnetButtonRect.x, magnetButtonRect.y, magnetButtonRect.w, magnetButtonRect.h);
+            ctx.textAlign = "center";
+            ctx.font = "24px Changa";
+            ctx.fillText("🧲", magnetButtonRect.x + 25, magnetButtonRect.y + 35);
+        }
 
         if (gameProps.isMagnetActive) {
             ctx.fillStyle = '#8A2BE2'; // Roxo
@@ -123,8 +125,8 @@ export function drawScore() {
         }
 
         // --- Botão de Slow-Mo [T] ---
-        if (gameProps.shopData.slowMoCharges > 0) {
-            ctx.fillStyle = gameProps.slowMoCooldownTimer > 0 ? 'rgba(100, 100, 100, 0.5)' : 'rgba(0, 191, 255, 0.5)';
+        if (gameProps.shopData.slowMoCharges > 0 && gameProps.slowMoCooldownTimer <= 0 && !gameProps.isSlowMoActive) {
+            ctx.fillStyle = 'rgba(0, 191, 255, 0.5)';
             ctx.fillRect(slowMoButtonRect.x, slowMoButtonRect.y, slowMoButtonRect.w, slowMoButtonRect.h);
             ctx.strokeStyle = '#FFF';
             ctx.strokeRect(slowMoButtonRect.x, slowMoButtonRect.y, slowMoButtonRect.w, slowMoButtonRect.h);
