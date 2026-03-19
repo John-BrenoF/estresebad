@@ -23,7 +23,9 @@ export const boss = {
     frame: 0,   
     survivalTimer: 0,
     hitTimer: 0, // Para o efeito de piscar ao ser atingido
-    redLightningTimer: 0 // Timer visual para o raio vermelho
+    redLightningTimer: 0, // Timer visual para o raio vermelho
+    barContactTimer: 0,
+    barCycleTimer: 0
 };
 
 export function initBoss() {
@@ -41,6 +43,8 @@ export function initBoss() {
     boss.frame = 0;
     boss.survivalTimer = 0;
     boss.redLightningTimer = 0;
+    boss.barContactTimer = 0;
+    boss.barCycleTimer = 0;
 }
 
 export function updateBoss(bird, onCollision) {
@@ -260,12 +264,20 @@ export function updateBoss(bird, onCollision) {
         }
     }
 
+    // Atualização do ciclo da Barra de Vida (Mortal vs Segura)
+    // 5.4s segura (324 frames) + 3s mortal (180 frames)
+    boss.barCycleTimer++;
+    if (boss.barCycleTimer > 504) boss.barCycleTimer = 0;
+    const isBarDeadly = boss.barCycleTimer > 324;
+
     // Colisão com a Barra de Vida (Hazard)
-    const barRect = { x: 20, y: 20, w: canvas.width - 40, h: 20 };
+    // Hitbox reduzida: 2px de cada lado (x+2, y+2, w-4, h-4)
+    const barRect = { x: 22, y: 22, w: canvas.width - 34, h: 16 };
     if (bird.x < barRect.x + barRect.w && bird.x + bird.width > barRect.x &&
         bird.y < barRect.y + barRect.h && bird.y + bird.height > barRect.y) {
-        if (Math.random() < 0.30 && !gameProps.isImmune) {
-             onCollision();
+        
+        if (isBarDeadly && !gameProps.isImmune) {
+            onCollision();
         }
     }
 }
@@ -452,6 +464,17 @@ export function drawBoss() {
     ctx.fillRect(barX, 20, barWidth, 20);
     ctx.fillStyle = '#FF4444';
     ctx.fillRect(barX, 20, barWidth * hpPercent, 20);
-    ctx.strokeStyle = '#FFF';
+
+    // Visualização do estado Mortal da barra
+    const isBarDeadly = boss.barCycleTimer > 324;
+    if (isBarDeadly) {
+        // Pisca Vermelho/Amarelo quando mortal para alertar o jogador
+        const blink = Math.floor(Date.now() / 100) % 2 === 0;
+        ctx.strokeStyle = blink ? '#FF0000' : '#FFFF00';
+        ctx.lineWidth = 3;
+    } else {
+        ctx.strokeStyle = '#FFF';
+        ctx.lineWidth = 1;
+    }
     ctx.strokeRect(barX, 20, barWidth, 20);
 }
