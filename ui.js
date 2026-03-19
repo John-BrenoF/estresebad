@@ -5,6 +5,43 @@ export const attackButtonRect = { x: 20, y: canvas.height - 150, w: 70, h: 70 };
 export const shieldButtonRect = { x: canvas.width - 90, y: canvas.height - 150, w: 70, h: 70 };
 export const furyButtonRect = { x: canvas.width - 90, y: canvas.height - 230, w: 70, h: 70 };
 
+// Helper para desenhar fundo borrado (Glassmorphism)
+function drawBackdropBlur() {
+    ctx.save();
+    // Aplica o blur no conteúdo atual do canvas
+    ctx.filter = 'blur(6px)';
+    ctx.drawImage(canvas, 0, 0);
+    ctx.restore();
+    
+    // Camada escura transparente para contraste
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+
+// Cache para a tela de espera (para evitar re-aplicar blur em loop sem limpar)
+let cachedWaitBackground = null;
+let lastWaitStartTime = 0;
+
+function getCachedWaitBackground() {
+    // Se mudou o tempo de início, é uma nova espera: gerar novo snapshot
+    if (gameProps.waitStartTime !== lastWaitStartTime || !cachedWaitBackground) {
+        lastWaitStartTime = gameProps.waitStartTime;
+        cachedWaitBackground = document.createElement('canvas');
+        cachedWaitBackground.width = canvas.width;
+        cachedWaitBackground.height = canvas.height;
+        const bCtx = cachedWaitBackground.getContext('2d');
+        
+        // Desenha o estado atual do jogo (fundo) com blur
+        bCtx.filter = 'blur(8px)';
+        bCtx.drawImage(canvas, 0, 0);
+        
+        // Aplica o overlay escuro no snapshot
+        bCtx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        bCtx.fillRect(0, 0, cachedWaitBackground.width, cachedWaitBackground.height);
+    }
+    return cachedWaitBackground;
+}
+
 export function drawScore() {
     ctx.fillStyle = '#FFF';
     ctx.lineWidth = 2;
@@ -140,8 +177,11 @@ export function drawScore() {
 }
 
 export function drawWaitingScreen() {
-    ctx.fillStyle = '#000000'; // Fundo preto
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // Usa o snapshot borrado do fundo
+    const bg = getCachedWaitBackground();
+    if (bg) {
+        ctx.drawImage(bg, 0, 0);
+    }
     
     const elapsed = (Date.now() - gameProps.waitStartTime) / 1000;
     const remaining = Math.max(0, gameProps.selectedDelay - elapsed);
@@ -174,8 +214,7 @@ export function drawWaitingScreen() {
 }
 
 export function drawGameOverScreen() {
-    ctx.fillStyle = '#000000DE'; // Fundo preto
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    drawBackdropBlur();
     
     let currentY = 200;
 
@@ -263,8 +302,7 @@ function draw3DButton(rect, color, text, fontSize = "30px") {
 }
 
 export function drawStartScreen() {
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    drawBackdropBlur();
 
     // Título Pulsante
     const scale = 1 + Math.sin(Date.now() / 500) * 0.00;
