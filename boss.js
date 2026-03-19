@@ -259,6 +259,15 @@ export function updateBoss(bird, onCollision) {
             }
         }
     }
+
+    // Colisão com a Barra de Vida (Hazard)
+    const barRect = { x: 20, y: 20, w: canvas.width - 40, h: 20 };
+    if (bird.x < barRect.x + barRect.w && bird.x + bird.width > barRect.x &&
+        bird.y < barRect.y + barRect.h && bird.y + bird.height > barRect.y) {
+        if (Math.random() < 0.30 && !gameProps.isImmune) {
+             onCollision();
+        }
+    }
 }
 
 function defeatBoss(onCollision) {
@@ -338,9 +347,9 @@ export function drawBoss() {
     } else if (isEnraged) {
         // Cor pulsante entre branco e um vermelho claro quando violento
         const phase = Math.sin(boss.frame * 1); // Pulsação mais rápida
-        const r = black;
-        const g = black- (155 * (1 + phase) / 2); // 255 -> 100
-        const b = black- (195 * (1 + phase) / 2); // 255 -> 100
+        const r = 255;
+        const g = 255 - (155 * (1 + phase) / 2); // 255 -> 100
+        const b = 255 - (195 * (1 + phase) / 2); // 255 -> 100
         bossColor = `rgb(${r},${g},${b})`;
     }
     ctx.fillStyle = bossColor;
@@ -349,10 +358,10 @@ export function drawBoss() {
         ctx.shadowColor = '#FF0000';
         ctx.shadowBlur = 25;
     } else {
-        // Efeito de aura/fumaça fantasmagórica pulsante
-        const auraPulse = 0.6 + (Math.sin(boss.frame * 19.5) + 1) / 5; // Varia entre 0.6 e 1.0
-        ctx.shadowColor = `rgba(10, 10, 10, 0.95), ${0.3 * auraPulse})`; // Alpha pulsante
-        ctx.shadowBlur = 0 + 15 * auraPulse; // Blur pulsante
+        // Efeito de aura/fumaça fantasmagórica pulsante (Melhorado)
+        const auraPulse = 0.5 + (Math.sin(boss.frame * 0.5) + 1) / 2; // Pulsação mais ampla e sinistra
+        ctx.shadowColor = `rgba(0, 0, 0, ${0.8 * auraPulse})`; // Aura negra corrigida e mais forte
+        ctx.shadowBlur = 20 + 20 * auraPulse; // Blur maior para destacar o boss
     }
 
     ctx.beginPath();
@@ -436,12 +445,13 @@ export function drawBoss() {
     ctx.fill();
 
     // Barra de Vida do Boss
-    const barWidth = canvas.width - 200;
+    const barX = 20;
+    const barWidth = canvas.width - 40; // Barra mais longa
     const hpPercent = boss.hp / boss.maxHp;
     ctx.fillStyle = '#444';
-    ctx.fillRect(100, 20, barWidth, 20);
+    ctx.fillRect(barX, 20, barWidth, 20);
     ctx.fillStyle = '#FF4444';
-    ctx.fillRect(100, 20, barWidth * hpPercent, 20);
+    ctx.fillRect(barX, 20, barWidth * hpPercent, 20);
     ctx.strokeStyle = '#FFF';
-    ctx.strokeRect(100, 20, barWidth, 20);
+    ctx.strokeRect(barX, 20, barWidth, 20);
 }

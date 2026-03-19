@@ -473,10 +473,10 @@ function playerAttack() {
 
         gameProps.playerShotsFired++;
         if (gameProps.playerShotsFired >= 2) {
-            gameProps.playerAttackCooldown = 5 * 60; // 5 segundos de recarga após 2 tiros
+            gameProps.playerAttackCooldown = 240; // Recarga de 4 segundos após 2 tiros
             gameProps.playerShotsFired = 0;
         } else {
-            gameProps.playerAttackCooldown = 15; // Pequeno delay (0.25s) entre os tiros do burst
+            gameProps.playerAttackCooldown = 10; // Tiro rápido no burst (mais ágil)
         }
     }
 }
