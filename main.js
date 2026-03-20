@@ -1,6 +1,6 @@
 import { canvas, ctx, gameProps, resetGameProps } from './state.js';
 import { DELAY_TIMES } from './constants.js';
-import { checkHighScore, saveHighScore, saveTotalCoins, saveShopData, getShopData, getTotalCoins } from './storage.js';
+import { checkHighScore, saveScoreToHistory, saveTotalCoins, saveShopData, getShopData, getTotalCoins } from './storage.js';
 import { bird } from './bird.js';
 import { pipes, updatePipes, drawPipes } from './pipes.js';
 import { initMovingTube, updateMovingTube, drawMovingTube, movingTube } from './movingTube.js';
@@ -17,6 +17,7 @@ import { checkAchievements, drawAchievements, loadAchievements, checkBossAchieve
 import { loadMissions, updateMissionProgress, drawMissionMap, handleMissionClick, handleMissionScroll } from './missions.js';
 import { initBoss, updateBoss, drawBoss, boss } from './boss.js';
 import { updateAndDrawFakeCones, resetFakeCones } from './fakeCones.js';
+import { drawStatsScreen, handleStatsClick } from './stats.js';
 import { checkGeometryEvent, updateGeometryState, drawGeometryOverlay } from './geometry.js';
  
 let screenShake = { intensity: 0, duration: 0 };
@@ -38,7 +39,7 @@ function gameOver() {
     
     if (checkHighScore(gameProps.score)) {
         gameProps.isNewHighScore = true;
-        saveHighScore(gameProps.score);
+        saveScoreToHistory(gameProps.score);
     }
 
     updateMissionProgress();
@@ -139,6 +140,13 @@ function loop() {
     // Se o mapa de missões estiver aberto
     if (gameProps.isMissionMapOpen) {
         drawMissionMap();
+        requestAnimationFrame(loop);
+        return;
+    }
+
+    // Se a tela de estatísticas estiver aberta
+    if (gameProps.isStatsOpen) {
+        drawStatsScreen();
         requestAnimationFrame(loop);
         return;
     }
@@ -526,6 +534,14 @@ function handleInput(e) {
         return;
     }
 
+    if (gameProps.isStatsOpen) {
+        if (e.type === 'click') {
+            handleStatsClick(x, y);
+        }
+        // Poderia adicionar scroll aqui se necessário no futuro
+        return;
+    }
+
     // Para Gameplay e Menu, usamos touchstart para resposta instantânea
     const isAction = e.type === 'click' || e.type === 'touchstart';
 
@@ -561,6 +577,9 @@ function handleInput(e) {
             startWaitingPeriod();
         } else if (action === 'missions') {
             gameProps.isMissionMapOpen = true;
+            gameProps.menuFadeInTimer = 30;
+        } else if (action === 'stats') {
+            gameProps.isStatsOpen = true;
             gameProps.menuFadeInTimer = 30;
         }
         return;

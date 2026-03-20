@@ -27,6 +27,7 @@ export const gameProps = {
     totalCoins: 0,
     isShopOpen: false,
     shopData: null,
+    isStatsOpen: false,
     isImmune: false,
     menuFadeInTimer: 30, // Animação de fade-in para o menu inicial
     immunityTimer: 0,
@@ -83,6 +84,7 @@ export function resetGameProps() {
     gameProps.totalCoins = getTotalCoins();
     gameProps.isShopOpen = false;
     gameProps.shopData = getShopData();
+    gameProps.isStatsOpen = false;
     gameProps.menuFadeInTimer = 0;
     gameProps.isImmune = false;
     gameProps.immunityTimer = 0;

@@ -1,26 +1,33 @@
-import { HIGH_SCORES_KEY, COINS_KEY, SHOP_DATA_KEY, SKINS } from './constants.js';
+import { SCORE_HISTORY_KEY, COINS_KEY, SHOP_DATA_KEY, SKINS } from './constants.js';
 
-export function getHighScores() {
-    const scores = localStorage.getItem(HIGH_SCORES_KEY);
+export function getScoreHistory() {
+    const scores = localStorage.getItem(SCORE_HISTORY_KEY);
     return scores ? JSON.parse(scores) : [];
 }
 
-export function saveHighScore(score) {
-    const highScores = getHighScores();
-    const newScore = { score: score, date: new Date().toLocaleDateString() };
+export function saveScoreToHistory(score) {
+    const history = getScoreHistory();
+    const newEntry = { score: score, date: new Date().toISOString() };
     
-    highScores.push(newScore);
-    highScores.sort((a, b) => b.score - a.score);
-    highScores.splice(3);
-    
-    localStorage.setItem(HIGH_SCORES_KEY, JSON.stringify(highScores));
-    return highScores;
+    history.push(newEntry);
+    // Mantém o histórico dos últimos 50 jogos
+    if (history.length > 50) {
+        history.shift();
+    }
+    localStorage.setItem(SCORE_HISTORY_KEY, JSON.stringify(history));
+}
+
+export function getTopScores(count = 3) {
+    const history = getScoreHistory();
+    // Cria uma cópia antes de ordenar para não modificar a ordem original do histórico
+    const sorted = [...history].sort((a, b) => b.score - a.score);
+    return sorted.slice(0, count);
 }
 
 export function checkHighScore(score) {
-    const highScores = getHighScores();
-    if (highScores.length < 3) return true;
-    return score > highScores[highScores.length - 1].score;
+    const topScores = getTopScores(3);
+    if (topScores.length < 3) return true;
+    return score > topScores[topScores.length - 1].score;
 }
 
 export function getTotalCoins() {

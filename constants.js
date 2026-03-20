@@ -1,5 +1,5 @@
 // Chave para localStorage
-export const HIGH_SCORES_KEY = 'morcegoFlap_highScores';
+export const SCORE_HISTORY_KEY = 'morcegoFlap_scoreHistory';
 export const COINS_KEY = 'morcegoFlap_coins';
 export const SHOP_DATA_KEY = 'morcegoFlap_shopData';
 

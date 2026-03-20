@@ -1,5 +1,5 @@
 import { ctx, canvas, gameProps } from './state.js';
-import { getHighScores } from './storage.js';
+import { getTopScores } from './storage.js';
 
 export const attackButtonRect = { x: 20, y: canvas.height - 150, w: 70, h: 70 };
 export const shieldButtonRect = { x: canvas.width - 90, y: canvas.height - 150, w: 70, h: 70 };
@@ -302,11 +302,12 @@ export function drawGameOverScreen() {
     ctx.textAlign = "left";
 }
 
-const startButton = { x: canvas.width / 2 - 125, y: canvas.height / 2 - 30, w: 250, h: 50 };
-const hardcoreButton = { x: canvas.width / 2 - 125, y: canvas.height / 2 + 30, w: 250, h: 50 };
-const bossButton = { x: canvas.width / 2 - 125, y: canvas.height / 2 + 90, w: 250, h: 50 };
-const shopButton = { x: canvas.width / 2 - 125, y: canvas.height / 2 + 150, w: 120, h: 50 };
-const missionsButton = { x: canvas.width / 2 + 5, y: canvas.height / 2 + 150, w: 120, h: 50 };
+const startButton = { x: canvas.width / 2 - 125, y: canvas.height / 2 - 60, w: 250, h: 50 };
+const hardcoreButton = { x: canvas.width / 2 - 125, y: canvas.height / 2, w: 250, h: 50 };
+const bossButton = { x: canvas.width / 2 - 125, y: canvas.height / 2 + 60, w: 250, h: 50 };
+const shopButton = { x: canvas.width / 2 - 130, y: canvas.height / 2 + 130, w: 80, h: 50 };
+const missionsButton = { x: canvas.width / 2 - 40, y: canvas.height / 2 + 130, w: 80, h: 50 };
+const statsButton = { x: canvas.width / 2 + 50, y: canvas.height / 2 + 130, w: 80, h: 50 };
 
 // Função auxiliar para desenhar botões 3D
 export function draw3DButton(rect, color, text, fontSize = "30px") {
@@ -387,10 +388,13 @@ export function drawStartScreen() {
     draw3DButton(bossButton, '#6A0DAD', "Boss Rush");
 
     // Botão Loja
-    draw3DButton(shopButton, '#6A0DAD', "Loja", "24px");
+    draw3DButton(shopButton, '#6A0DAD', "Loja", "22px");
 
     // Botão Missões
-    draw3DButton(missionsButton, '#6A0DAD', "Missões", "24px");
+    draw3DButton(missionsButton, '#6A0DAD', "Missões", "22px");
+
+    // Botão Estatísticas
+    draw3DButton(statsButton, '#6A0DAD', "Stats", "22px");
 
     ctx.textAlign = "left";
 }
@@ -415,6 +419,10 @@ export function handleMenuClick(x, y) {
     // Clicou em Missões
     if (x > missionsButton.x && x < missionsButton.x + missionsButton.w && y > missionsButton.y && y < missionsButton.y + missionsButton.h) {
         return 'missions';
+    }
+    // Clicou em Estatísticas
+    if (x > statsButton.x && x < statsButton.x + statsButton.w && y > statsButton.y && y < statsButton.y + statsButton.h) {
+        return 'stats';
     }
     return null;
 }
