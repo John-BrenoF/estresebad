@@ -29,7 +29,8 @@ export const boss = {
     healCheckTimer: 0,
     isHealing: false,
     healDuration: 0,
-    healAmountPerFrame: 0
+    healAmountPerFrame: 0,
+    diagonalBeams: []
 };
 
 export function initBoss() {
@@ -53,6 +54,7 @@ export function initBoss() {
     boss.isHealing = false;
     boss.healDuration = 0;
     boss.healAmountPerFrame = 0;
+    boss.diagonalBeams = [];
 }
 
 export function updateBoss(bird, onCollision) {
@@ -121,20 +123,29 @@ export function updateBoss(bird, onCollision) {
     boss.timer--;
     if (boss.timer <= 0) {
         if (boss.state === 'idle') {
-            const isEnraged = boss.hp / boss.maxHp < 0.4;
-            // Escolhe um ataque aleatório
-            let attacks = ['attack1', 'attack3', 'attack4', 'attack5'];
-            // Se estiver "violento", adiciona o novo ataque com mais chance
-            if (isEnraged) {
-                attacks.push('attack6', 'attack6', 'attack6'); // Ataque de shotgun
+            const isEnraged = boss.hp / boss.maxHp < 0.5;
+            
+            // 50.8% de chance de usar o ataque diagonal se estiver com pouca vida
+            if (isEnraged && Math.random() < 0.508) {
+                boss.state = 'attack_diagonal';
+                boss.attackTimer = 0;
+                boss.timer = 140; // Tempo suficiente para o aviso e o disparo
+            } else {
+                // Escolhe um ataque aleatório dos outros
+                let attacks = ['attack1', 'attack3', 'attack4', 'attack5'];
+                // Se estiver "violento", adiciona o ataque de shotgun
+                if (isEnraged) {
+                    attacks.push('attack6', 'attack6', 'attack6'); 
+                }
+                boss.state = attacks[Math.floor(Math.random() * attacks.length)];
+                boss.attackTimer = 0;
+                boss.timer = isEnraged ? 180 : 240; // Ataques mais rápidos quando violento
             }
-            boss.state = attacks[Math.floor(Math.random() * attacks.length)];
-            boss.attackTimer = 0;
-            boss.timer = isEnraged ? 180 : 240; // Ataques mais rápidos quando violento
         } else {
             boss.state = 'idle';
             boss.timer = 60; // Descanso (~1s)
             boss.lasers = []; // Limpa lasers
+            boss.diagonalBeams = []; // Limpa faixas diagonais
         }
     }
 
@@ -202,6 +213,70 @@ export function updateBoss(bird, onCollision) {
                     size: 9, type: 'orb_enraged'
                 });
             }
+        }
+    }
+
+    // NOVO ATAQUE: Faixa de Energia Diagonal (37.8% chance em low health)
+    if (boss.state === 'attack_diagonal') {
+        if (boss.attackTimer === 1) {
+            // Angulo entre 28 e 34 graus
+            const angleDeg = 28 + Math.random() * 6;
+            // Converte para radianos (considerando a orientação da tela)
+            // Usamos negativo para inverter se necessário, mas aqui vamos rotacionar o canvas
+            const angle = angleDeg * Math.PI / 180;
+            
+            // Posição alvo próxima do player (com uma pequena variação)
+            const offsetX = (Math.random() - 0.5) * 60;
+            const offsetY = (Math.random() - 0.5) * 60;
+            
+            boss.diagonalBeams.push({
+                x: bird.x + offsetX,
+                y: bird.y + offsetY,
+                angle: angle,
+                width: 50, // Largura da faixa
+                state: 'warning',
+                timer: 90, // 1.5 segundos de aviso (luz)
+                maxTimer: 90
+            });
+            playBossLaser(); // Som de aviso
+        }
+    }
+
+    // Atualizar Faixas Diagonais
+    boss.diagonalBeams.forEach(b => {
+        if (b.state === 'warning') {
+            b.timer--;
+            if (b.timer <= 0) {
+                b.state = 'firing';
+                b.timer = 30; // 0.5 segundos de dano ativo
+                playBossRedLightning(); // Som de disparo
+                triggerScreenShake(12, 20);
+            }
+        } else if (b.state === 'firing') {
+            b.timer--;
+            // Lógica de Colisão da Faixa Diagonal
+            if (!gameProps.isImmune && !gameProps.isPlayerShieldActive) {
+                // Calcula a distância do centro do pássaro até a linha central da faixa
+                // Usamos a fórmula da distância de ponto a linha rotacionada
+                // A linha passa por (b.x, b.y) com angulo b.angle
+                const dx = (bird.x + bird.width/2) - b.x;
+                const dy = (bird.y + bird.height/2) - b.y;
+                
+                // Distância perpendicular à linha
+                // Rotação inversa para achar a distância no eixo Y local da faixa
+                const dist = Math.abs(dx * Math.sin(b.angle) - dy * Math.cos(b.angle));
+                
+                if (dist < b.width / 2) {
+                    onCollision();
+                }
+            }
+        }
+    });
+    // Limpeza de feixes finalizados
+    for (let i = 0; i < boss.diagonalBeams.length; i++) {
+        if (boss.diagonalBeams[i].state === 'firing' && boss.diagonalBeams[i].timer <= 0) {
+            boss.diagonalBeams.splice(i, 1);
+            i--;
         }
     }
 
@@ -347,6 +422,60 @@ export function drawBoss() {
             ctx.fillStyle = 'red'; // Centro branco
             ctx.fillRect(l.x + l.w*0.2, l.y + l.h*0.2, l.w*0.6, l.h*0.6);
         }
+    });
+
+    // Desenhar Faixas Diagonais
+    boss.diagonalBeams.forEach(b => {
+        ctx.save();
+        ctx.translate(b.x, b.y);
+        ctx.rotate(b.angle); // Rotaciona entre 28 e 34 graus
+        
+        const longLen = canvas.height * 3; // Comprimento para cobrir a tela toda
+        
+        if (b.state === 'warning') {
+            // Efeito de Luz -> Vermelho Brilhante
+            const progress = 1 - (b.timer / b.maxTimer);
+            const alpha = 0.2 + 0.5 * progress;
+            
+            // Interpolação de cor: Branco/Luz (início) -> Vermelho Brilhante (fim)
+            const g = Math.floor(255 - 200 * progress);
+            const blue = Math.floor(255 - 200 * progress);
+            
+            ctx.fillStyle = `rgba(255, ${g}, ${blue}, ${alpha})`;
+            ctx.fillRect(-longLen/2, -b.width/2, longLen, b.width);
+            
+            // Bordas de aviso
+            ctx.strokeStyle = `rgba(255, 50, 50, ${alpha})`;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(-longLen/2, -b.width/2, longLen, b.width);
+            
+        } else if (b.state === 'firing') {
+            // Faixa externa (Vermelho Brilhante)
+            ctx.shadowColor = '#ff0000';
+            ctx.shadowBlur = 40;
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.69)';
+            ctx.fillRect(-longLen/2, -b.width/2, longLen, b.width);
+            
+            // Faixa interna (Vermelho Escuro "Raio")
+            ctx.shadowBlur = 10;
+            ctx.fillStyle = '#a80e0e'; // Vermelho escuro sangue
+            const innerWidth = b.width * 0.4;
+            ctx.fillRect(-longLen/2, -innerWidth/2, longLen, innerWidth);
+            
+            // Efeito de raio zigue-zague dentro
+            ctx.strokeStyle = '#fb8282';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            let lx = -longLen/2;
+            ctx.moveTo(lx, 0);
+            while (lx < longLen/2) {
+                lx += Math.random() * 40 + 10;
+                ctx.lineTo(lx, (Math.random() - 0.5) * innerWidth);
+            }
+            ctx.stroke();
+        }
+        
+        ctx.restore();
     });
 
     // Desenhar Projéteis
