@@ -8,11 +8,11 @@ import { checkMiniBatAchievement } from './achievements.js';
 export const dramuzos = {
     x: 0,
     y: 0,
-    width: 90, // Reduzido (era 120)
-    height: 80, // Reduzido (era 100)
+    width: 90, 
+    height: 80, 
     active: false,
-    hp: 400,
-    maxHp: 408,
+    hp: 340,
+    maxHp: 348,
     state: 'idle',
     isDefeated: false,
     timer: 0,
