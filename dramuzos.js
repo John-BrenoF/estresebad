@@ -377,71 +377,298 @@ export function drawDramuzos() {
         }
     });
 
-    // Desenhar Dramuzos (Morcego Gigante)
-    ctx.save();
-    ctx.translate(dramuzos.x + dramuzos.width/2, dramuzos.y + dramuzos.height/2);
-    
-    // Animação de voo lenta e pesada
-    const wingY = Math.sin(dramuzos.frame * 0.5) * 30;
-    
-    // --- NOVAS ANIMAÇÕES ---
-    // Inclinação sutil do corpo durante o voo
-    const bodyTilt = Math.cos(dramuzos.frame * 0.5) * 0.1; // Inclina ~5.7 graus
-    ctx.rotate(bodyTilt);
-    // Efeito de "respirar" ou "esmagar e esticar"
-    const bodySquash = 1 + Math.sin(dramuzos.frame * 0.5) * 0.05;
-    ctx.scale(1, bodySquash);
-    // --- FIM NOVAS ANIMAÇÕES ---
-    
-    // Asas Gigantes
-    ctx.fillStyle = '#1a0505'; // Quase preto
-    ctx.beginPath();
-    // Asa Esq
-    ctx.moveTo(-20, 0);
-    ctx.quadraticCurveTo(-80, wingY - 80, -180, wingY - 20);
-    ctx.quadraticCurveTo(-120, wingY + 60, -80, wingY + 40);
-    ctx.quadraticCurveTo(-50, wingY + 50, -20, 20);
-    // Asa Dir
-    ctx.moveTo(20, 0);
-    ctx.quadraticCurveTo(80, wingY - 80, 180, wingY - 20);
-    ctx.quadraticCurveTo(120, wingY + 60, 80, wingY + 40);
-    ctx.quadraticCurveTo(50, wingY + 50, 20, 20);
-    ctx.fill();
-    
-    // Estrutura óssea da asa (vermelho escuro)
-    ctx.strokeStyle = '#500';
-    ctx.lineWidth = 3;
-    ctx.stroke();
+        // Desenhar Dramuzos (Boss Morcego)
+ctx.save();
 
-    // Corpo
-    ctx.fillStyle = '#2d0a0a';
-    ctx.beginPath();
-    ctx.ellipse(0, 0, 40, 50, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Olhos (Amarelo brilhante)
-    ctx.fillStyle = '#FFD700';
-    ctx.shadowColor = '#FFD700';
-    ctx.shadowBlur = 20;
-    ctx.beginPath();
-    ctx.arc(-15, -10, 8, 0, Math.PI*2);
-    ctx.arc(15, -10, 8, 0, Math.PI*2);
-    ctx.fill();
-    ctx.shadowBlur = 0;
-
-    // Boca/Dentes
-    ctx.fillStyle = '#FFF';
-    ctx.beginPath();
-    ctx.moveTo(-10, 10); ctx.lineTo(-5, 25); ctx.lineTo(0, 10);
-    ctx.moveTo(0, 10); ctx.lineTo(5, 25); ctx.lineTo(10, 10);
-    ctx.fill();
-
-    ctx.restore();
-
-    // Barra de Vida
-    const barX = 20;
-    const barWidth = canvas.width - 40;
-    ctx.fillStyle = '#444'; ctx.fillRect(barX, 20, barWidth, 20);
-    ctx.fillStyle = '#8B0000'; ctx.fillRect(barX, 20, barWidth * (dramuzos.hp / dramuzos.maxHp), 20); // Vermelho escuro
-    ctx.strokeStyle = '#FFF'; ctx.strokeRect(barX, 20, barWidth, 20);
+// Sistema de ativação do glitch
+if (Math.random() < 0.005 && dramuzos.glitchTimer <= 0) {
+    dramuzos.glitchTimer = 180; // duração ~3 segundos
 }
+
+// Variáveis do glitch
+let glitchOffsetX = 0;
+let glitchOffsetY = 0;
+let glitchActive = dramuzos.glitchTimer > 0;
+
+// Aplica tremor quando glitch ativo
+if (glitchActive) {
+    glitchOffsetX = (Math.random() - 0.5) * 20;
+    glitchOffsetY = (Math.random() - 0.5) * 20;
+    dramuzos.glitchTimer--;
+}
+
+// Centraliza o boss + deslocamento do glitch
+ctx.translate(
+    dramuzos.x + dramuzos.width / 2 + glitchOffsetX,
+    dramuzos.y + dramuzos.height / 2 + glitchOffsetY
+);
+
+// Animações naturais
+const wingY = Math.sin(dramuzos.frame * 0.35) * 40;
+const wingCurve = Math.sin(dramuzos.frame * 0.2) * 20;
+const bodyBreath = Math.sin(dramuzos.frame * 0.1) * 3;
+
+// Cor base (preto profundo com glow)
+ctx.fillStyle = '#000000';
+ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+ctx.shadowBlur = 30;
+
+// Asas
+ctx.beginPath();
+
+// Asa esquerda
+ctx.moveTo(-20, 0);
+ctx.quadraticCurveTo(-90, wingY - 90 + wingCurve, -180, wingY - 20);
+ctx.lineTo(-150, wingY);
+ctx.quadraticCurveTo(-120, wingY + 60, -80, wingY + 40);
+ctx.lineTo(-50, wingY + 55);
+ctx.quadraticCurveTo(-40, wingY + 30, -20, 20);
+
+// Asa direita
+ctx.moveTo(20, 0);
+ctx.quadraticCurveTo(90, wingY - 90 + wingCurve, 180, wingY - 20);
+ctx.lineTo(150, wingY);
+ctx.quadraticCurveTo(120, wingY + 60, 80, wingY + 40);
+ctx.lineTo(50, wingY + 55);
+ctx.quadraticCurveTo(40, wingY + 30, 20, 20);
+
+ctx.fill();
+
+// Corpo com leve respiração
+ctx.shadowBlur = 25;
+ctx.fillStyle = '#010101';
+ctx.beginPath();
+ctx.ellipse(0, bodyBreath, 40, 50 + bodyBreath, 0, 0, Math.PI * 2);
+ctx.fill();
+
+// Orelhas
+ctx.beginPath();
+ctx.moveTo(-20, -40);
+ctx.lineTo(-10, -70);
+ctx.lineTo(0, -40);
+
+ctx.moveTo(20, -40);
+ctx.lineTo(10, -70);
+ctx.lineTo(0, -40);
+ctx.fill();
+
+// Olhos vermelhos com brilho
+ctx.fillStyle = '#ff0000';
+ctx.shadowColor = 'rgba(255, 0, 0, 0.9)';
+ctx.shadowBlur = 25;
+
+ctx.beginPath();
+ctx.arc(-15, -10, 8, 0, Math.PI * 2);
+ctx.arc(15, -10, 8, 0, Math.PI * 2);
+ctx.fill();
+
+ctx.shadowBlur = 0;
+
+// Boca / dentes
+ctx.fillStyle = '#FFF';
+ctx.beginPath();
+ctx.moveTo(-10, 10); ctx.lineTo(-5, 25); ctx.lineTo(0, 10);
+ctx.moveTo(0, 10); ctx.lineTo(5, 25); ctx.lineTo(10, 10);
+ctx.fill();
+
+// Fumaça sutil nos cantos
+ctx.fillStyle = 'rgba(30, 30, 30, 0.25)';
+for (let i = 0; i < 4; i++) {
+    const angle = i * Math.PI / 2;
+    const x = Math.cos(angle) * 50;
+    const y = Math.sin(angle) * 50 + bodyBreath;
+
+    ctx.beginPath();
+    ctx.arc(
+        x + Math.sin(dramuzos.frame * 0.2 + i) * 5,
+        y + Math.cos(dramuzos.frame * 0.2 + i) * 5,
+        8 + Math.sin(dramuzos.frame * 0.3 + i) * 3,
+        0,
+        Math.PI * 2
+    );
+    ctx.fill();
+}
+
+// Glitch visual baseado na própria silhueta
+if (glitchActive) {
+
+    // Eco da imagem (duplicação leve)
+    ctx.globalAlpha = 0.15;
+    for (let i = 0; i < 3; i++) {
+        let offsetX = (Math.random() - 0.5) * 25;
+        let offsetY = (Math.random() - 0.5) * 25;
+
+        ctx.drawImage(
+            canvas,
+            dramuzos.x,
+            dramuzos.y,
+            dramuzos.width,
+            dramuzos.height,
+            dramuzos.x + offsetX,
+            dramuzos.y + offsetY,
+            dramuzos.width,
+            dramuzos.height
+        );
+    }
+    ctx.globalAlpha = 1;
+
+    // Rasgo horizontal (efeito bug de render)
+    for (let i = 0; i < 4; i++) {
+        let y = (Math.random() - 0.5) * dramuzos.height;
+        let h = Math.random() * 8 + 3;
+        let shift = (Math.random() - 0.5) * 50;
+
+        ctx.drawImage(
+            canvas,
+            dramuzos.x,
+            dramuzos.y + y,
+            dramuzos.width,
+            h,
+            dramuzos.x + shift,
+            dramuzos.y + y,
+            dramuzos.width,
+            h
+        );
+    }
+
+    // leve falha de opacidade
+    ctx.globalAlpha = 0.85 + Math.random() * 0.15;
+}
+
+ctx.restore();
+    
+    
+   // ================= SISTEMA DE SANGRAMENTO NATURAL =================
+if (!dramuzos.bleed) {
+    dramuzos.bleed = {
+        active: false,
+        timer: 0,
+        duration: 4500,
+        nextCheck: 0,
+        drips: []
+    };
+}
+
+const now = Date.now();
+
+// Checagem a cada 5s
+if (now > dramuzos.bleed.nextCheck) {
+    dramuzos.bleed.nextCheck = now + 5000;
+    
+    if (Math.random() < 0.3) {
+        dramuzos.bleed.active = true;
+        dramuzos.bleed.timer = now;
+        
+        // cria pontos fixos de sangramento (tipo "cortes")
+        dramuzos.bleed.drips = [];
+        const count = Math.floor(Math.random() * 3) + 2;
+        
+        for (let i = 0; i < count; i++) {
+            dramuzos.bleed.drips.push({
+                x: Math.random(), // posição relativa (0 a 1)
+                length: 0,
+                speed: Math.random() * 0.3 + 0.1
+            });
+        }
+    }
+}
+
+// Desativa
+if (dramuzos.bleed.active && now - dramuzos.bleed.timer > dramuzos.bleed.duration) {
+    dramuzos.bleed.active = false;
+}
+
+
+// ================= BARRA DE VIDA =================
+const barX = 20;
+const barWidth = canvas.width - 40;
+const barY = 20;
+const barHeight = 20;
+
+// Fundo
+ctx.fillStyle = '#0b0b0b';
+ctx.fillRect(barX, barY, barWidth, barHeight);
+
+// Gradiente fundo
+const bgGradient = ctx.createLinearGradient(barX, barY, barX, barY + barHeight);
+bgGradient.addColorStop(0, '#1a1a1a');
+bgGradient.addColorStop(1, '#000');
+ctx.fillStyle = bgGradient;
+ctx.fillRect(barX, barY, barWidth, barHeight);
+
+// Vida
+const hpRatio = dramuzos.hp / dramuzos.maxHp;
+
+const hpGradient = ctx.createLinearGradient(barX, barY, barX + barWidth, barY);
+hpGradient.addColorStop(0, '#2a0000');
+hpGradient.addColorStop(0.6, '#8B0000');
+hpGradient.addColorStop(1, '#ff1a1a');
+
+ctx.fillStyle = hpGradient;
+ctx.fillRect(barX, barY, barWidth * hpRatio, barHeight);
+
+// brilho leve
+ctx.globalAlpha = 0.12;
+ctx.fillStyle = '#fff';
+ctx.fillRect(barX, barY, barWidth * hpRatio, 3);
+ctx.globalAlpha = 1;
+
+
+// ================= BORDAS GÓTICAS MINIMALISTAS =================
+
+// sombra externa (profundidade)
+ctx.shadowColor = 'rgba(0,0,0,0.7)';
+ctx.shadowBlur = 6;
+
+// moldura principal
+ctx.lineWidth = 2;
+ctx.strokeStyle = '#3a3a3a';
+ctx.strokeRect(barX, barY, barWidth, barHeight);
+
+// linha interna fina (detalhe elegante)
+ctx.shadowBlur = 0;
+ctx.lineWidth = 1;
+ctx.strokeStyle = '#000';
+ctx.strokeRect(barX + 1, barY + 1, barWidth - 2, barHeight - 2);
+
+// detalhe superior (linha quase imperceptível)
+ctx.strokeStyle = '#222';
+ctx.beginPath();
+ctx.moveTo(barX, barY);
+ctx.lineTo(barX + barWidth, barY);
+ctx.stroke();
+
+// detalhe inferior (peso visual)
+ctx.strokeStyle = '#111';
+ctx.beginPath();
+ctx.moveTo(barX, barY + barHeight);
+ctx.lineTo(barX + barWidth, barY + barHeight);
+ctx.stroke();
+
+
+// ================= SANGUE ESCORRENDO (NATURAL) =================
+if (dramuzos.bleed.active) {
+    ctx.fillStyle = '#6a0000';
+    
+    dramuzos.bleed.drips.forEach(drip => {
+        const x = barX + drip.x * (barWidth * hpRatio);
+        
+        // crescimento gradual
+        drip.length += drip.speed;
+        
+        // leve oscilação pra parecer orgânico
+        const sway = Math.sin(now * 0.01 + drip.x * 10) * 1.5;
+        
+        ctx.beginPath();
+        ctx.moveTo(x, barY + barHeight);
+        ctx.lineTo(x + sway, barY + barHeight + drip.length);
+        ctx.lineTo(x - sway, barY + barHeight + drip.length);
+        ctx.closePath();
+        ctx.fill();
+        
+        // gotinha na ponta
+        ctx.beginPath();
+        ctx.arc(x, barY + barHeight + drip.length, 2, 0, Math.PI * 2);
+        ctx.fill();
+    });
+}}
