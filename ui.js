@@ -1,6 +1,7 @@
 import { ctx, canvas, gameProps } from './state.js';
 import { getTopScores, saveTotalCoins, saveDramuzosPurchased } from './storage.js';
 import { playBuy, playGlitch } from './audio.js';
+import { isAchievementUnlocked } from './achievements.js';
 
 export const attackButtonRect = { x: 20, y: canvas.height - 150, w: 70, h: 70 };
 export const shieldButtonRect = { x: canvas.width - 90, y: canvas.height - 150, w: 70, h: 70 };
@@ -394,8 +395,8 @@ export function drawStartScreen() {
     draw3DButton(bossButton, '#6A0DAD', "Boss Rush");
 
     // Botão Dramuzos (Desbloqueável)
-    const kills = gameProps.normalBossDefeatedCount || 0;
-    const isUnlocked = kills >= 2 || gameProps.dramuzosPurchased;
+    const isTosmosDefeated = isAchievementUnlocked('defeat_tosmos');
+    const isUnlocked = isTosmosDefeated || gameProps.dramuzosPurchased;
 
     if (isUnlocked) {
         draw3DButton(dramuzosButtonRect, '#8B0000', "Dramuzos");
@@ -405,7 +406,7 @@ export function drawStartScreen() {
         const canAfford = gameProps.totalCoins >= price;
         // Se tiver dinheiro, mostra o preço em roxo (compravel), senão mostra status de bloqueio
         const btnColor = canAfford ? '#4B0082' : '#333';
-        const btnText = canAfford ? `Desbloquear: ${price} 💰` : `Bloqueado (${kills}/2)`;
+        const btnText = canAfford ? `Desbloquear: ${price} 💰` : `Bloqueado (Derrote Tosmos)`;
         
         draw3DButton(dramuzosButtonRect, btnColor, btnText, canAfford ? "22px" : "30px");
     }
@@ -436,8 +437,8 @@ export function handleMenuClick(x, y) {
         return 'boss';
     }
     // Clicou em Dramuzos
-    const kills = gameProps.normalBossDefeatedCount || 0;
-    const isUnlocked = kills >= 2 || gameProps.dramuzosPurchased;
+    const isTosmosDefeated = isAchievementUnlocked('defeat_tosmos');
+    const isUnlocked = isTosmosDefeated || gameProps.dramuzosPurchased;
     
     if (x > dramuzosButtonRect.x && x < dramuzosButtonRect.x + dramuzosButtonRect.w && y > dramuzosButtonRect.y && y < dramuzosButtonRect.y + dramuzosButtonRect.h) {
         if (isUnlocked) {

@@ -10,7 +10,7 @@ export const boss = {
     width: 80,
     height: 80,
     active: false,
-    hp: 315,
+    hp: 325,
     maxHp: 142.8,
     prevX: 0,
     prevY: 0,

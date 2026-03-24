@@ -1,7 +1,7 @@
 import { ctx, canvas, gameProps } from './state.js';
 import { saveTotalCoins } from './storage.js';
 import { triggerScreenShake } from './main.js';
-import { playBossDefeated, playSoundWave, playExplosion, playGlitch } from './audio.js';
+import { playBossDefeated, playSoundWave, playExplosion, playGlitch, playBossLaser } from './audio.js';
 import { createParticles } from './particles.js';
 
 export const dramuzos = {
@@ -10,8 +10,8 @@ export const dramuzos = {
     width: 120, // Maior que o boss normal
     height: 100,
     active: false,
-    hp: 600,
-    maxHp: 600,
+    hp: 400,
+    maxHp: 408,
     state: 'idle',
     isDefeated: false,
     timer: 0,
@@ -20,7 +20,8 @@ export const dramuzos = {
     projectiles: [], // Usado para as ondas sonoras
     bloodLightnings: [], // Novo array para os raios de sangue
     invertAttackCheckTimer: 0,
-    tookDamageSinceLastInvertCheck: false
+    tookDamageSinceLastInvertCheck: false,
+    lasers: []
 };
 
 export function initDramuzos() {
@@ -37,6 +38,7 @@ export function initDramuzos() {
     dramuzos.bloodLightnings = [];
     dramuzos.invertAttackCheckTimer = 0;
     dramuzos.tookDamageSinceLastInvertCheck = false;
+    dramuzos.lasers = [];
 }
 
 export function updateDramuzos(bird, onCollision) {
@@ -57,12 +59,20 @@ export function updateDramuzos(bird, onCollision) {
     dramuzos.timer--;
     if (dramuzos.timer <= 0) {
         if (dramuzos.state === 'idle') {
-            dramuzos.state = 'attack_soundwave';
+            // Escolhe um ataque aleatório
+            const attacks = ['attack_soundwave', 'attack_laser'];
+            dramuzos.state = attacks[Math.floor(Math.random() * attacks.length)];
             dramuzos.attackTimer = 0;
-            dramuzos.timer = 300; // Duração do ataque (5 segundos)
+            
+            if (dramuzos.state === 'attack_soundwave') {
+                dramuzos.timer = 300; // Duração do ataque de onda (5s)
+            } else { // attack_laser
+                dramuzos.timer = 240; // Duração do ataque de laser (4s)
+            }
         } else {
             dramuzos.state = 'idle';
             dramuzos.timer = 90; // Descanso de 1.5s
+            dramuzos.lasers = []; // Limpa os lasers ao final do ataque
         }
     }
 
@@ -93,9 +103,28 @@ export function updateDramuzos(bird, onCollision) {
                 x: dramuzos.x + dramuzos.width / 2, // Sai do centro do boss
                 y: dramuzos.y + dramuzos.height / 2,
                 radius: 10,
-                maxRadius: (canvas.width * 1.5) * 0.40, // Reduzido para 40% do tamanho original
+                maxRadius: (canvas.width * 1.5) * 0.47, // Reduzido para 47% do tamanho original
                 speed: 6,
-                width: 20 // Espessura da onda
+                width: 15 // Espessura da onda
+            });
+        }
+    }
+
+    // NOVO: Ataque de Feixe de Luz (Laser)
+    if (dramuzos.state === 'attack_laser') {
+        dramuzos.attackTimer++;
+        // Dispara 3 lasers durante o ataque
+        if (dramuzos.attackTimer % 70 === 0 && dramuzos.attackTimer < 220) {
+            const yPos = Math.random() * (canvas.height - 50);
+            triggerScreenShake(4, 15);
+            playBossLaser();
+            dramuzos.lasers.push({ 
+                x: 0, 
+                y: yPos, 
+                w: canvas.width, 
+                h: 16, 
+                warning: true, 
+                timer: 14 // 10% mais rápido que o do boss normal (16 -> ~14)
             });
         }
     }
@@ -151,7 +180,7 @@ export function updateDramuzos(bird, onCollision) {
                     b.active = false; // Já atingiu, não atinge de novo no mesmo raio
                     const chance = Math.random();
                     
-                    if (chance < 0.40) { // 40% Morre
+                    if (chance < 0.46) { // 46% Morre
                         onCollision();
                     } else if (chance < 0.50) { // 10% Regenera Boss (0.40 a 0.50)
                         const missingHp = dramuzos.maxHp - dramuzos.hp;
@@ -168,6 +197,21 @@ export function updateDramuzos(bird, onCollision) {
             }
         }
     }
+
+    // NOVO: Atualizar Lasers
+    dramuzos.lasers.forEach((l) => {
+        if (l.warning) {
+            l.timer--;
+            if (l.timer <= 0) l.warning = false;
+        }
+        // Colisão Laser
+        if (!l.warning && !gameProps.isImmune && !gameProps.isPlayerShieldActive) {
+            if (bird.x < l.x + l.w && bird.x + bird.width > l.x &&
+                bird.y < l.y + l.h && bird.y + bird.height > l.y) {
+                onCollision();
+            }
+        }
+    });
 
     // Atualizar Projéteis (Ondas Sonoras)
     for (let i = 0; i < dramuzos.projectiles.length; i++) {
@@ -297,6 +341,22 @@ export function drawDramuzos() {
         ctx.restore();
     });
 
+    // NOVO: Desenhar Lasers
+    dramuzos.lasers.forEach(l => {
+        if (l.warning) {
+            // Efeito de aviso piscando
+            const alpha = l.timer % 10 < 5 ? 0.5 : 0.9;
+            ctx.fillStyle = `rgba(255, 0, 0, ${alpha})`;
+            ctx.fillRect(l.x, l.y, l.w, l.h);
+        } else {
+            // Feixe de luz vermelho sólido
+            ctx.fillStyle = `#FF0000`; // Borda vermelha
+            ctx.fillRect(l.x, l.y, l.w, l.h);
+            ctx.fillStyle = '#FF8888'; // Centro rosa/vermelho claro
+            ctx.fillRect(l.x, l.y + l.h * 0.2, l.w, l.h * 0.6);
+        }
+    });
+
     // Desenhar Ondas Sonoras
     dramuzos.projectiles.forEach(p => {
         if (p.type === 'soundwave') {
@@ -323,6 +383,15 @@ export function drawDramuzos() {
     
     // Animação de voo lenta e pesada
     const wingY = Math.sin(dramuzos.frame * 0.5) * 30;
+    
+    // --- NOVAS ANIMAÇÕES ---
+    // Inclinação sutil do corpo durante o voo
+    const bodyTilt = Math.cos(dramuzos.frame * 0.5) * 0.1; // Inclina ~5.7 graus
+    ctx.rotate(bodyTilt);
+    // Efeito de "respirar" ou "esmagar e esticar"
+    const bodySquash = 1 + Math.sin(dramuzos.frame * 0.5) * 0.05;
+    ctx.scale(1, bodySquash);
+    // --- FIM NOVAS ANIMAÇÕES ---
     
     // Asas Gigantes
     ctx.fillStyle = '#1a0505'; // Quase preto

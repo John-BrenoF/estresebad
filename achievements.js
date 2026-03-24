@@ -10,6 +10,7 @@ const ACHIEVEMENTS = [
     { id: 'score_100', name: 'Mestre dos Céus', score: 100, reward: 250, unlocked: false },
     { id: 'buy_5_skins', name: 'Colecionador', type: 'skins', count: 5, unlocked: false },
     { id: 'boss_no_damage', name: 'Intocável', type: 'boss_no_damage', reward: 1000, unlocked: false },
+    { id: 'defeat_tosmos', name: 'Derrota do Boss Tosmos', type: 'defeat_boss', reward: 500, unlocked: false },
 ];
 
 const notificationQueue = [];
@@ -66,12 +67,22 @@ export function checkSkinAchievements() {
 }
 
 export function checkBossAchievements() {
+    // Conquista: Intocável (Sem tomar dano)
     const ach = ACHIEVEMENTS.find(a => a.type === 'boss_no_damage' && !a.unlocked);
-    // Se a conquista existe, o boss foi derrotado e o jogador não tomou dano
     if (ach && gameProps.didDefeatBoss && !gameProps.bossPlayerTookDamage) {
         ach.unlocked = true;
         saveTotalCoins(ach.reward);
         showNotification(ach);
+        saveAchievements();
+    }
+
+    // Conquista: Derrota do Boss Tosmos (Desbloqueia Dramuzos)
+    const tosmosAch = ACHIEVEMENTS.find(a => a.id === 'defeat_tosmos' && !a.unlocked);
+    // Verifica se derrotou o boss e se é o modo Boss normal (não Dramuzos)
+    if (tosmosAch && gameProps.didDefeatBoss && gameProps.isBossMode) {
+        tosmosAch.unlocked = true;
+        saveTotalCoins(tosmosAch.reward);
+        showNotification(tosmosAch);
         saveAchievements();
     }
 }
@@ -116,4 +127,9 @@ export function drawAchievements() {
     if (notification.timer <= 0) {
         notificationQueue.shift();
     }
+}
+
+export function isAchievementUnlocked(id) {
+    const ach = ACHIEVEMENTS.find(a => a.id === id);
+    return ach ? ach.unlocked : false;
 }
