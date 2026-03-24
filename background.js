@@ -8,6 +8,10 @@ const clouds = [];
 const shootingStars = [];
 const fireflies = [];
 
+let currentScenario = 'city'; // city, forest, desert
+let scenarioTimer = 0;
+const SCENARIO_DURATION = 1800; // 30 segundos (60fps * 30) para trocar
+
 function lerpColor(color1, color2, factor) {
     const r1 = parseInt(color1.substring(1, 3), 16);
     const g1 = parseInt(color1.substring(3, 5), 16);
@@ -35,6 +39,39 @@ const DAY_CYCLE_COLORS = {
     sunset: { top: '#ff7e5f', bottom: '#feb47b' } // Reutiliza as cores do nascer do sol
 };
 
+function generateSceneryObject(obj, x, type) {
+    obj.x = x;
+    obj.type = type;
+    
+    if (type === 'city') {
+        obj.width = 40 + Math.random() * 60;
+        obj.height = 50 + Math.random() * 150;
+        obj.isLighter = Math.random() > 0.8;
+        obj.windows = [];
+        
+        const cols = Math.floor(obj.width / 12);
+        const rows = Math.floor(obj.height / 18);
+        for(let r=1; r<rows; r++) {
+            for(let c=1; c<cols; c++) {
+                if(Math.random() > 0.4) { 
+                    obj.windows.push({x: c*12, y: r*18, w: 6, h: 10});
+                }
+            }
+        }
+    } else if (type === 'forest') {
+        obj.width = 40 + Math.random() * 40;
+        obj.height = 80 + Math.random() * 120;
+        obj.treeType = Math.random() > 0.3 ? 'pine' : 'round'; // Mais pinheiros
+    } else if (type === 'desert') {
+        obj.width = 30 + Math.random() * 30;
+        obj.height = 60 + Math.random() * 100;
+        obj.cactusType = Math.floor(Math.random() * 3); // 0: simples, 1: um braço, 2: dois braços
+    }
+    
+    obj.y = canvas.height - obj.height;
+    obj.color = null; // Será definido no draw
+}
+
 export function initBackground() {
     stars.length = 0;
     buildings.length = 0;
@@ -43,6 +80,9 @@ export function initBackground() {
     clouds.length = 0;
     shootingStars.length = 0;
     fireflies.length = 0;
+
+    currentScenario = 'city';
+    scenarioTimer = 0;
 
     // Criar estrelas
     for (let i = 0; i < 60; i++) {
@@ -85,32 +125,10 @@ export function initBackground() {
     // Criar prédios (silhueta)
     let currentX = 0;
     while (currentX < canvas.width * 2) {
-        const width = 40 + Math.random() * 60;
-        const height = 50 + Math.random() * 150;
-        const isLighter = Math.random() > 0.8;
-        const building = {
-            x: currentX,
-            y: canvas.height - height,
-            width: width,
-            height: height,
-            color: isLighter ? '#222' : '#1a1a1a', // Cor inicial, será atualizada
-            isLighter: isLighter
-        };
+        const building = {};
+        generateSceneryObject(building, currentX, 'city');
         buildings.push(building);
-        
-        // Gerar janelas para o prédio
-        building.windows = [];
-        const cols = Math.floor(width / 12);
-        const rows = Math.floor(height / 18);
-        for(let r=1; r<rows; r++) {
-            for(let c=1; c<cols; c++) {
-                if(Math.random() > 0.4) { // 60% de chance de ter janela
-                    building.windows.push({x: c*12, y: r*18, w: 6, h: 10});
-                }
-            }
-        }
-        
-        currentX += width;
+        currentX += building.width;
     }
 
     // Criar nuvens
@@ -147,6 +165,17 @@ export function initBackground() {
 }
 
 export function updateAndDrawBackground() {
+    // Atualizar Timer do Cenário
+    if (!gameProps.isGameOver && !gameProps.isGeometryMode) {
+        scenarioTimer++;
+        if (scenarioTimer > SCENARIO_DURATION) {
+            scenarioTimer = 0;
+            const scenarios = ['city', 'forest', 'desert'];
+            const nextIdx = (scenarios.indexOf(currentScenario) + 1) % scenarios.length;
+            currentScenario = scenarios[nextIdx];
+        }
+    }
+
     // --- MODO GEOMETRY (Visual Grid Neon) ---
     if (gameProps.isGeometryMode) {
         // Fundo Roxo Escuro/Azul
@@ -592,25 +621,87 @@ export function updateAndDrawBackground() {
     // Desenhar e mover prédios (Paralaxe)
     buildings.forEach(b => {
         if (!gameProps.isGameOver) {
-            b.x -= gameProps.gameSpeed * 0.5; // Paralaxe: Movem-se a 50% da velocidade do jogo
-            if (b.x + b.width < 0) b.x += canvas.width * 2; // Recicla o prédio lá na frente
+            b.x -= gameProps.gameSpeed * 0.5; // Paralaxe
+            if (b.x + b.width < 0) {
+                // Recicla e TRANSFORMA no cenário atual
+                b.x += canvas.width * 2;
+                generateSceneryObject(b, b.x, currentScenario);
+            }
         }
-        const nightColor = b.isLighter ? '#222' : '#1a1a1a';
-        const dayColor = b.isLighter ? '#555' : '#4a4a4a';
-        b.color = lerpColor(nightColor, dayColor, dayFactor);
-        ctx.fillStyle = b.color;
-        ctx.fillRect(b.x + buildingParallaxX, b.y + buildingParallaxY, b.width + 1, b.height); // +1 para evitar linhas brancas entre prédios
-        
-        // Desenhar Janelas
-        // À noite (time < 0.25 ou > 0.75), as janelas acendem (amarelo claro)
-        // De dia, elas ficam escuras/reflexivas (azul claro transparente)
-        const isNight = time < 0.25 || time > 0.75;
-        const windowColor = isNight ? 'rgba(255, 255, 200, 0.6)' : 'rgba(200, 220, 255, 0.1)';
-        
-        ctx.fillStyle = windowColor;
-        b.windows.forEach(w => {
-            ctx.fillRect(b.x + buildingParallaxX + w.x, b.y + buildingParallaxY + w.y, w.w, w.h);
-        });
+
+        if (b.type === 'city') {
+            // === DESENHAR PRÉDIO ===
+            const nightColor = b.isLighter ? '#222' : '#1a1a1a';
+            const dayColor = b.isLighter ? '#555' : '#4a4a4a';
+            b.color = lerpColor(nightColor, dayColor, dayFactor);
+            ctx.fillStyle = b.color;
+            ctx.fillRect(b.x + buildingParallaxX, b.y + buildingParallaxY, b.width + 1, b.height);
+            
+            // Janelas
+            const isNight = time < 0.25 || time > 0.75;
+            const windowColor = isNight ? 'rgba(255, 255, 200, 0.6)' : 'rgba(200, 220, 255, 0.1)';
+            ctx.fillStyle = windowColor;
+            b.windows.forEach(w => {
+                ctx.fillRect(b.x + buildingParallaxX + w.x, b.y + buildingParallaxY + w.y, w.w, w.h);
+            });
+
+        } else if (b.type === 'forest') {
+            // === DESENHAR ÁRVORE ===
+            const trunkColor = '#3E2723'; // Marrom escuro
+            const leavesNight = '#003300';
+            const leavesDay = '#228B22';
+            const leavesColor = lerpColor(leavesNight, leavesDay, dayFactor);
+            
+            // Tronco
+            ctx.fillStyle = trunkColor;
+            const trunkW = b.width * 0.3;
+            ctx.fillRect(b.x + buildingParallaxX + (b.width - trunkW)/2, b.y + buildingParallaxY + b.height * 0.6, trunkW, b.height * 0.4);
+            
+            // Folhagem
+            ctx.fillStyle = leavesColor;
+            if (b.treeType === 'pine') {
+                // Pinheiro (Triângulos empilhados)
+                ctx.beginPath();
+                ctx.moveTo(b.x + buildingParallaxX + b.width/2, b.y + buildingParallaxY); // Topo
+                ctx.lineTo(b.x + buildingParallaxX + b.width, b.y + buildingParallaxY + b.height * 0.7);
+                ctx.lineTo(b.x + buildingParallaxX, b.y + buildingParallaxY + b.height * 0.7);
+                ctx.fill();
+            } else {
+                // Árvore redonda
+                ctx.beginPath();
+                ctx.arc(b.x + buildingParallaxX + b.width/2, b.y + buildingParallaxY + b.height * 0.35, b.width/2 + 10, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+        } else if (b.type === 'desert') {
+            // === DESENHAR CACTO ===
+            const cactusNight = '#0B330B';
+            const cactusDay = '#556B2F'; // Olive Green
+            const cactusColor = lerpColor(cactusNight, cactusDay, dayFactor);
+            
+            ctx.fillStyle = cactusColor;
+            const stemW = b.width * 0.4;
+            const stemX = b.x + buildingParallaxX + (b.width - stemW)/2;
+            
+            // Tronco principal
+            ctx.beginPath();
+            ctx.roundRect(stemX, b.y + buildingParallaxY, stemW, b.height, 10);
+            ctx.fill();
+            
+            // Braços
+            if (b.cactusType >= 1) { // Braço direito
+                ctx.beginPath();
+                ctx.roundRect(stemX + stemW - 5, b.y + buildingParallaxY + b.height * 0.4, 15, 10, 5); // Conexão
+                ctx.roundRect(stemX + stemW + 5, b.y + buildingParallaxY + b.height * 0.2, stemW * 0.8, b.height * 0.3, 5); // Braço sobe
+                ctx.fill();
+            }
+            if (b.cactusType === 2) { // Braço esquerdo
+                ctx.beginPath();
+                ctx.roundRect(stemX - 10, b.y + buildingParallaxY + b.height * 0.5, 15, 10, 5);
+                ctx.roundRect(stemX - 15, b.y + buildingParallaxY + b.height * 0.3, stemW * 0.8, b.height * 0.3, 5);
+                ctx.fill();
+            }
+        }
     });
 
     // --- NEBLINA MATINAL ---
