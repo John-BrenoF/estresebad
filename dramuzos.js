@@ -211,9 +211,9 @@ export function updateDramuzos(bird, onCollision) {
             dramuzos.miniBats.push({
                 x: dramuzos.x,
                 y: dramuzos.y + 40,
-                vx: Math.cos(angle) * 3.5, // Lentos
-                vy: Math.sin(angle) * 3.5,
-                life: 132, // Aumentado para 2.2 segundos (2.2 * 60)
+                vx: Math.cos(angle) * 3.3, // Lentos
+                vy: Math.sin(angle) * 3.3,
+                life: 107, // Aumentado para 2.2 segundos (2.2 * 60)
                 size: 15,
                 trail: [] // Array para o rastro visual
             });
@@ -222,8 +222,8 @@ export function updateDramuzos(bird, onCollision) {
     }
 
     // --- Lógica do Raio de Sangue (Blood Lightning) ---
-    // 12% de chance a cada 40 frames (1 segundo)
-    if (gameProps.frames % 40 === 0 && Math.random() < 0.12) {
+    // 11% de chance a cada 40 frames (1 segundo)
+    if (gameProps.frames % 40 === 0 && Math.random() < 0.11) {
         // Definição do ângulo: Diagonal subindo para direita / descendo para esquerda
         const angleDeg = -45; 
         const angleRad = angleDeg * (Math.PI / 180);
@@ -233,7 +233,7 @@ export function updateDramuzos(bird, onCollision) {
             y: bird.y + bird.height / 2,
             angle: angleRad,
             width: 40,
-            timer: 45, // Tempo de aviso (warning)
+            timer: 46, // Tempo de aviso (warning)
             phase: 'warning',
             active: true
         });

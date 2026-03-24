@@ -398,6 +398,7 @@ export function triggerShockwave(x, y) {
 }
 
 function activateImmunityCard() {
+    if (gameProps.isDramuzosMode) return; // Bloqueado no Dramuzos
     if (gameProps.shopData.immunityCards > 0 && gameProps.cardCooldownTimer <= 0 && !gameProps.isImmune) {
         gameProps.isImmune = true;
         gameProps.immunityTimer = 3 * 60; // 3 segundos
@@ -409,6 +410,7 @@ function activateImmunityCard() {
 }
 
 function activateSlowMo() {
+    if (gameProps.isDramuzosMode) return; // Bloqueado no Dramuzos
     if (gameProps.shopData.slowMoCharges > 0 && gameProps.slowMoCooldownTimer <= 0 && !gameProps.isSlowMoActive) {
         gameProps.isSlowMoActive = true;
         gameProps.slowMoTimer = 5 * 60; // 5 segundos
@@ -420,6 +422,7 @@ function activateSlowMo() {
 }
 
 function activateMagnet() {
+    if (gameProps.isDramuzosMode) return; // Bloqueado no Dramuzos
     if (gameProps.magnetCooldownTimer <= 0 && !gameProps.isMagnetActive) {
         gameProps.isMagnetActive = true;
         gameProps.magnetTimer = 5 * 60; // 5 segundos
@@ -634,11 +637,17 @@ function handleInput(e) {
         // Botão de Ataque (Boss Mode)
         if (gameProps.isBossMode || gameProps.isDramuzosMode) {
             if (x > attackButtonRect.x && x < attackButtonRect.x + attackButtonRect.w && y > attackButtonRect.y && y < attackButtonRect.y + attackButtonRect.h) {
+                if (gameProps.isDramuzosMode && Math.random() < 0.16) {
+                    bird.jumpAction(); // Estresse: Pula junto com o ataque
+                }
                 playerAttack();
                 return;
             }
             // Botão de Escudo
             if (x > shieldButtonRect.x && x < shieldButtonRect.x + shieldButtonRect.w && y > shieldButtonRect.y && y < shieldButtonRect.y + shieldButtonRect.h) {
+                if (gameProps.isDramuzosMode && Math.random() < 0.16) {
+                    bird.jumpAction(); // Estresse: Pula junto com o escudo
+                }
                 activatePlayerShield();
                 return;
             }
@@ -692,10 +701,16 @@ function handleInput(e) {
     }
 
     if (e.type === 'keydown' && e.code === 'KeyF' && !gameProps.isGameOver) {
+        if (gameProps.isDramuzosMode && Math.random() < 0.16) {
+            bird.jumpAction();
+        }
         playerAttack();
     }
 
     if (e.type === 'keydown' && e.code === 'KeyS' && !gameProps.isGameOver) {
+        if (gameProps.isDramuzosMode && Math.random() < 0.16) {
+            bird.jumpAction();
+        }
         activatePlayerShield();
     }
 
