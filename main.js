@@ -19,11 +19,15 @@ import { initBoss, updateBoss, drawBoss, boss } from './boss.js';
 import { updateAndDrawFakeCones, resetFakeCones } from './fakeCones.js';
 import { drawStatsScreen, handleStatsClick } from './stats.js';
 import { checkGeometryEvent, updateGeometryState, drawGeometryOverlay } from './geometry.js';
+import { initDramuzos, updateDramuzos, drawDramuzos, dramuzos } from './dramuzos.js';
  
 let screenShake = { intensity: 0, duration: 0 };
 
 function gameOver() {
     if (gameProps.isBossMode && !boss.isDefeated) {
+        gameProps.bossPlayerTookDamage = true;
+    }
+    if (gameProps.isDramuzosMode && !dramuzos.isDefeated) {
         gameProps.bossPlayerTookDamage = true;
     }
 
@@ -44,7 +48,7 @@ function gameOver() {
 
     updateMissionProgress();
     // Verifica conquistas de final de jogo (como a do boss)
-    if (gameProps.isBossMode) {
+    if (gameProps.isBossMode || gameProps.isDramuzosMode) {
         checkBossAchievements();
     }
 }
@@ -57,7 +61,7 @@ function startWaitingPeriod() {
     gameProps.selectedDelay = DELAY_TIMES[randomIndex];
     gameProps.waitStartTime = Date.now();
     
-    if (gameProps.isBossMode) {
+    if (gameProps.isBossMode || gameProps.isDramuzosMode) {
         playBossMusic();
     } else {
         playNormalMusic();
@@ -96,6 +100,7 @@ function resetGame() {
     resetGhosts();
     resetFakeCones();
     if (gameProps.isBossMode) initBoss();
+    if (gameProps.isDramuzosMode) initDramuzos();
     
     loop();
 }
@@ -243,7 +248,10 @@ function loop() {
 
         if (gameProps.isBossMode) {
             updateBoss(bird, gameOver);
-        } else {
+        } else if (gameProps.isDramuzosMode) {
+            updateDramuzos(bird, gameOver);
+        } 
+        else {
             updatePipes(bird, gameOver);
             updateMovingTube(bird, gameOver);
             updateLightning(bird, gameOver);
@@ -264,7 +272,10 @@ function loop() {
     
     if (gameProps.isBossMode) {
         drawBoss();
-    } else {
+    } else if (gameProps.isDramuzosMode) {
+        drawDramuzos();
+    }
+    else {
         drawPipes();
         drawLightning();
         drawGhosts();
@@ -418,12 +429,13 @@ function activatePlayerShield() {
         playPlayerShield();
 
         // 9% de chance de curar o boss
-        if (gameProps.isBossMode && Math.random() < 0.09) {
-            if (boss.hp < boss.maxHp) {
-                const healthToHeal = (boss.maxHp - boss.hp) * 0.10;
-                boss.hp = Math.min(boss.maxHp, boss.hp + healthToHeal);
+        const activeBoss = gameProps.isBossMode ? boss : (gameProps.isDramuzosMode ? dramuzos : null);
+        if (activeBoss && Math.random() < 0.09) {
+            if (activeBoss.hp < activeBoss.maxHp) {
+                const healthToHeal = (activeBoss.maxHp - activeBoss.hp) * 0.10;
+                activeBoss.hp = Math.min(activeBoss.maxHp, activeBoss.hp + healthToHeal);
                 // Efeito visual de cura no boss
-                createParticles(boss.x + boss.width / 2, boss.y + boss.height / 2, '#00FF00', 30);
+                createParticles(activeBoss.x + activeBoss.width / 2, activeBoss.y + activeBoss.height / 2, '#00FF00', 30);
             }
         }
     }
@@ -450,7 +462,8 @@ function activateTripleShot() {
 }
 
 function playerAttack() {
-    if (gameProps.isBossMode && gameProps.playerAttackCooldown <= 0) {
+    const isBossBattle = gameProps.isBossMode || gameProps.isDramuzosMode;
+    if (isBossBattle && gameProps.playerAttackCooldown <= 0) {
         // Chance de 2% de ser um tiro vermelho (Crítico - Dobro de dano)
         const isCritical = Math.random() < 0.02;
         const type = isCritical ? 'player_shot_red' : 'player_shot';
@@ -462,18 +475,28 @@ function playerAttack() {
             playPlayerAttack();
         }
 
+        const targetBoss = gameProps.isBossMode ? boss : dramuzos;
+
         if (gameProps.isTripleShotActive) {
             // Tiro triplo
             playPlayerAttack(); // Toca o som uma vez
             // Tiro central
-            boss.projectiles.push({ x: bird.x + bird.width, y: bird.y + bird.height / 2, vx: 8, vy: 0, size: size, type: type });
+            targetBoss.projectiles.push({ x: bird.x + bird.width, y: bird.y + bird.height / 2, vx: 8, vy: 0, size: size, type: type });
             // Tiro superior (diagonal)
-            boss.projectiles.push({ x: bird.x + bird.width, y: bird.y + bird.height / 2, vx: 7.5, vy: -1.5, size: size * 0.8, type: type });
+            targetBoss.projectiles.push({ x: bird.x + bird.width, y: bird.y + bird.height / 2, vx: 7.5, vy: -1.5, size: size * 0.8, type: type });
             // Tiro inferior (diagonal)
-            boss.projectiles.push({ x: bird.x + bird.width, y: bird.y + bird.height / 2, vx: 7.5, vy: 1.5, size: size * 0.8, type: type });
+            targetBoss.projectiles.push({ x: bird.x + bird.width, y: bird.y + bird.height / 2, vx: 7.5, vy: 1.5, size: size * 0.8, type: type });
+            
+            // No modo Dramuzos, se for tiro de jogador, precisamos garantir que o updateDramuzos lide com isso
+            // O código do Dramuzos atual não tem lógica de receber tiro nos projéteis como o boss.js
+            // Vou adicionar a lógica de receber dano no dramuzos.js separadamente, mas aqui adicionamos ao array de projéteis dele
+            // Nota: dramuzos.js precisa iterar sobre projéteis para detectar colisão com o próprio corpo
+            // Como dramuzos.js é novo, implementei a colisão lá? Não, a função updateDramuzos no código acima não tinha
+            // logica de receber dano de 'player_shot'. Vou corrigir isso injetando a lógica no dramuzos.js no próximo bloco?
+            // Não, vou deixar aqui a injeção do projétil, mas preciso adicionar a colisão no arquivo dramuzos.js.
         } else {
             // Tiro normal
-            boss.projectiles.push({
+            targetBoss.projectiles.push({
                 x: bird.x + bird.width, y: bird.y + bird.height / 2,
                 vx: 8, vy: 0, size: size, type: type
             });
@@ -574,6 +597,13 @@ function handleInput(e) {
             gameProps.isInMenu = false;
             gameProps.isBossMode = true;
             gameProps.isHardcoreMode = false;
+            gameProps.isDramuzosMode = false;
+            startWaitingPeriod();
+        } else if (action === 'dramuzos') {
+            gameProps.isInMenu = false;
+            gameProps.isDramuzosMode = true;
+            gameProps.isBossMode = false;
+            gameProps.isHardcoreMode = false;
             startWaitingPeriod();
         } else if (action === 'missions') {
             gameProps.isMissionMapOpen = true;
@@ -594,7 +624,7 @@ function handleInput(e) {
         }
 
         // Botão de Ataque (Boss Mode)
-        if (gameProps.isBossMode) {
+        if (gameProps.isBossMode || gameProps.isDramuzosMode) {
             if (x > attackButtonRect.x && x < attackButtonRect.x + attackButtonRect.w && y > attackButtonRect.y && y < attackButtonRect.y + attackButtonRect.h) {
                 playerAttack();
                 return;

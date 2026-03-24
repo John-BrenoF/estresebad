@@ -1,5 +1,6 @@
 import { ctx, canvas, gameProps } from './state.js';
-import { getTopScores } from './storage.js';
+import { getTopScores, saveTotalCoins, saveDramuzosPurchased } from './storage.js';
+import { playBuy, playGlitch } from './audio.js';
 
 export const attackButtonRect = { x: 20, y: canvas.height - 150, w: 70, h: 70 };
 export const shieldButtonRect = { x: canvas.width - 90, y: canvas.height - 150, w: 70, h: 70 };
@@ -8,6 +9,8 @@ export const menuReturnButtonRect = { x: 20, y: 20, w: 80, h: 40 };
 export const immunityButtonRect = { x: 20, y: canvas.height - 70, w: 50, h: 50 };
 export const magnetButtonRect = { x: 80, y: canvas.height - 70, w: 50, h: 50 };
 export const slowMoButtonRect = { x: 140, y: canvas.height - 70, w: 50, h: 50 };
+// Novo botão para o Dramuzos
+export const dramuzosButtonRect = { x: canvas.width / 2 - 125, y: canvas.height / 2 + 120, w: 250, h: 50 };
 
 // Helper para desenhar fundo borrado (Glassmorphism)
 export function drawBackdropBlur() {
@@ -148,7 +151,7 @@ export function drawScore() {
         }
 
         // UI do Player Attack (somente no modo boss)
-        if (gameProps.isBossMode) {
+        if (gameProps.isBossMode || gameProps.isDramuzosMode) {
             ctx.fillStyle = '#FFF';
             ctx.font = "14px Changa";
             ctx.fillText(`Ataque [F]`, canvas.width - 120, 140);
@@ -305,9 +308,12 @@ export function drawGameOverScreen() {
 const startButton = { x: canvas.width / 2 - 125, y: canvas.height / 2 - 60, w: 250, h: 50 };
 const hardcoreButton = { x: canvas.width / 2 - 125, y: canvas.height / 2, w: 250, h: 50 };
 const bossButton = { x: canvas.width / 2 - 125, y: canvas.height / 2 + 60, w: 250, h: 50 };
-const shopButton = { x: canvas.width / 2 - 130, y: canvas.height / 2 + 130, w: 80, h: 50 };
-const missionsButton = { x: canvas.width / 2 - 40, y: canvas.height / 2 + 130, w: 80, h: 50 };
-const statsButton = { x: canvas.width / 2 + 50, y: canvas.height / 2 + 130, w: 80, h: 50 };
+
+// Ajuste de posições para caber o Dramuzos
+const shopButton = { x: canvas.width / 2 - 130, y: canvas.height / 2 + 190, w: 80, h: 50 };
+const missionsButton = { x: canvas.width / 2 - 40, y: canvas.height / 2 + 190, w: 80, h: 50 };
+const statsButton = { x: canvas.width / 2 + 50, y: canvas.height / 2 + 190, w: 80, h: 50 };
+
 
 // Função auxiliar para desenhar botões 3D
 export function draw3DButton(rect, color, text, fontSize = "30px") {
@@ -387,6 +393,23 @@ export function drawStartScreen() {
     // Botão Boss Rush
     draw3DButton(bossButton, '#6A0DAD', "Boss Rush");
 
+    // Botão Dramuzos (Desbloqueável)
+    const kills = gameProps.normalBossDefeatedCount || 0;
+    const isUnlocked = kills >= 2 || gameProps.dramuzosPurchased;
+
+    if (isUnlocked) {
+        draw3DButton(dramuzosButtonRect, '#8B0000', "Dramuzos");
+    } else {
+        // Lógica de Compra / Bloqueio
+        const price = 4310;
+        const canAfford = gameProps.totalCoins >= price;
+        // Se tiver dinheiro, mostra o preço em roxo (compravel), senão mostra status de bloqueio
+        const btnColor = canAfford ? '#4B0082' : '#333';
+        const btnText = canAfford ? `Desbloquear: ${price} 💰` : `Bloqueado (${kills}/2)`;
+        
+        draw3DButton(dramuzosButtonRect, btnColor, btnText, canAfford ? "22px" : "30px");
+    }
+
     // Botão Loja
     draw3DButton(shopButton, '#6A0DAD', "Loja", "22px");
 
@@ -411,6 +434,27 @@ export function handleMenuClick(x, y) {
     // Clicou em Boss
     if (x > bossButton.x && x < bossButton.x + bossButton.w && y > bossButton.y && y < bossButton.y + bossButton.h) {
         return 'boss';
+    }
+    // Clicou em Dramuzos
+    const kills = gameProps.normalBossDefeatedCount || 0;
+    const isUnlocked = kills >= 2 || gameProps.dramuzosPurchased;
+    
+    if (x > dramuzosButtonRect.x && x < dramuzosButtonRect.x + dramuzosButtonRect.w && y > dramuzosButtonRect.y && y < dramuzosButtonRect.y + dramuzosButtonRect.h) {
+        if (isUnlocked) {
+            return 'dramuzos';
+        } else {
+            // Tenta comprar
+            const price = 4310;
+            if (gameProps.totalCoins >= price) {
+                gameProps.totalCoins -= price;
+                saveTotalCoins(-price); // Deduz moedas
+                gameProps.dramuzosPurchased = true;
+                saveDramuzosPurchased(true); // Salva permanente
+                playBuy();
+                playGlitch();
+                return 'dramuzos'; // Inicia imediatamente
+            }
+        }
     }
     // Clicou em Loja
     if (x > shopButton.x && x < shopButton.x + shopButton.w && y > shopButton.y && y < shopButton.y + shopButton.h) {

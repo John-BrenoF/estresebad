@@ -1,5 +1,5 @@
 import { ctx, canvas, gameProps } from './state.js';
-import { saveTotalCoins, getTotalCoins } from './storage.js';
+import { saveTotalCoins, getTotalCoins, saveBossDefeatedCount } from './storage.js';
 import { triggerScreenShake } from './main.js';
 import { playBossDefeated, playBossLaser, playBossRedLightning, playExplosion, playGlitch } from './audio.js';
 import { createParticles } from './particles.js';
@@ -399,6 +399,8 @@ function defeatBoss(onCollision) {
     playBossDefeated();
     triggerScreenShake(20, 60);
     saveTotalCoins(500); // Victory reward
+    gameProps.normalBossDefeatedCount++;
+    saveBossDefeatedCount(gameProps.normalBossDefeatedCount);
     // After a delay, end the game
     setTimeout(() => {
         gameProps.score = Math.floor(boss.survivalTimer / 60); // Score is survival time

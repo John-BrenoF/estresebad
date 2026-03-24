@@ -1,4 +1,4 @@
-import { getTotalCoins, getShopData } from './storage.js';
+import { getTotalCoins, getShopData, getBossDefeatedCount, getDramuzosPurchased } from './storage.js';
 
 export const canvas = document.getElementById('jogoCanvas');
 export const ctx = canvas.getContext('2d');
@@ -28,6 +28,8 @@ export const gameProps = {
     isShopOpen: false,
     shopData: null,
     isStatsOpen: false,
+    normalBossDefeatedCount: 0,
+    dramuzosPurchased: false,
     isImmune: false,
     menuFadeInTimer: 30, // Animação de fade-in para o menu inicial
     immunityTimer: 0,
@@ -41,6 +43,7 @@ export const gameProps = {
     isHardcoreMode: false,
     isMissionMapOpen: false,
     isBossMode: false,
+    isDramuzosMode: false,
     playerAttackCooldown: 0,
     playerShotsFired: 0,
     isPlayerShieldActive: false,
@@ -84,6 +87,8 @@ export function resetGameProps() {
     gameProps.totalCoins = getTotalCoins();
     gameProps.isShopOpen = false;
     gameProps.shopData = getShopData();
+    gameProps.normalBossDefeatedCount = getBossDefeatedCount();
+    gameProps.dramuzosPurchased = getDramuzosPurchased();
     gameProps.isStatsOpen = false;
     gameProps.menuFadeInTimer = 0;
     gameProps.isImmune = false;

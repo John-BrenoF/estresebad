@@ -392,6 +392,25 @@ export function playCloneSpawn() {
     osc.stop(audioCtx.currentTime + 0.3);
 }
 
+export function playSoundWave() {
+    resumeAudio();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(100, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.5); // Som "Wub wub" subindo
+    
+    gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+    
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.5);
+}
+
 const catMusic = new Audio('#cat #meme U Ii A I A u III A I cat.mp3');
 let catJumpTimeout = null;
 let lastCatJumpTime = 0;

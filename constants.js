@@ -2,6 +2,8 @@
 export const SCORE_HISTORY_KEY = 'morcegoFlap_scoreHistory';
 export const COINS_KEY = 'morcegoFlap_coins';
 export const SHOP_DATA_KEY = 'morcegoFlap_shopData';
+export const BOSS_DEFEATED_COUNT_KEY = 'morcegoFlap_bossDefeatedCount';
+export const DRAMUZOS_PURCHASED_KEY = 'morcegoFlap_dramuzosPurchased';
 
 // Tempos de delay possíveis (em segundos)
 export const DELAY_TIMES = [0.1, 1, 3, 10, 18, 6, 0];

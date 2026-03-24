@@ -1,4 +1,4 @@
-import { SCORE_HISTORY_KEY, COINS_KEY, SHOP_DATA_KEY, SKINS } from './constants.js';
+import { SCORE_HISTORY_KEY, COINS_KEY, SHOP_DATA_KEY, SKINS, BOSS_DEFEATED_COUNT_KEY, DRAMUZOS_PURCHASED_KEY } from './constants.js';
 
 export function getScoreHistory() {
     const scores = localStorage.getItem(SCORE_HISTORY_KEY);
@@ -57,4 +57,22 @@ export function getShopData() {
 
 export function saveShopData(data) {
     localStorage.setItem(SHOP_DATA_KEY, JSON.stringify(data));
+}
+
+export function getBossDefeatedCount() {
+    const count = localStorage.getItem(BOSS_DEFEATED_COUNT_KEY);
+    return count ? parseInt(count) : 0;
+}
+
+export function saveBossDefeatedCount(count) {
+    localStorage.setItem(BOSS_DEFEATED_COUNT_KEY, count.toString());
+}
+
+export function getDramuzosPurchased() {
+    const purchased = localStorage.getItem(DRAMUZOS_PURCHASED_KEY);
+    return purchased === 'true';
+}
+
+export function saveDramuzosPurchased(isPurchased) {
+    localStorage.setItem(DRAMUZOS_PURCHASED_KEY, isPurchased.toString());
 }
