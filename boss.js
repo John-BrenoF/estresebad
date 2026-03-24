@@ -10,7 +10,7 @@ export const boss = {
     width: 80,
     height: 80,
     active: false,
-    hp: 305,
+    hp: 315,
     maxHp: 142.8,
     prevX: 0,
     prevY: 0,
@@ -25,7 +25,11 @@ export const boss = {
     hitTimer: 0, // Para o efeito de piscar ao ser atingido
     redLightningTimer: 0, // Timer visual para o raio vermelho
     barContactTimer: 0,
-    barCycleTimer: 0
+    barCycleTimer: 0,
+    healCheckTimer: 0,
+    isHealing: false,
+    healDuration: 0,
+    healAmountPerFrame: 0
 };
 
 export function initBoss() {
@@ -45,6 +49,10 @@ export function initBoss() {
     boss.redLightningTimer = 0;
     boss.barContactTimer = 0;
     boss.barCycleTimer = 0;
+    boss.healCheckTimer = 0;
+    boss.isHealing = false;
+    boss.healDuration = 0;
+    boss.healAmountPerFrame = 0;
 }
 
 export function updateBoss(bird, onCollision) {
@@ -78,6 +86,34 @@ export function updateBoss(bird, onCollision) {
             const reward = Math.random() > 0.5 ? 8 : 6;
             gameProps.currentCoins += reward;
             // Efeito visual de ganho de moeda (texto flutuante poderia ser adicionado aqui)
+        }
+    }
+
+    // Mecânica de cura com vida baixa
+    if (boss.hp / boss.maxHp < 0.25 && !boss.isHealing) {
+        boss.healCheckTimer++;
+        // A cada 17.5 segundos (1050 frames) cada frame equivalente a 1 segundo
+        if (boss.healCheckTimer >= 1050) {
+            boss.healCheckTimer = 0;
+            // 45% de chance de curar
+            if (Math.random() < 0.45) {
+                boss.isHealing = true;
+                const totalHeal = boss.maxHp * 0.08;
+                const durationInFrames = 2.1 * 7; // 2.1 segundos
+                boss.healDuration = durationInFrames;
+                boss.healAmountPerFrame = totalHeal / durationInFrames;
+            }
+        }
+    }
+
+    // Aplica a cura se estiver ativa
+    if (boss.isHealing) {
+        if (boss.healDuration > 0) {
+            boss.hp = Math.min(boss.maxHp, boss.hp + boss.healAmountPerFrame);
+            boss.healDuration--;
+            createParticles(boss.x + Math.random() * boss.width, boss.y + Math.random() * boss.height, '#00FF00', 2);
+        } else {
+            boss.isHealing = false;
         }
     }
 
@@ -366,7 +402,10 @@ export function drawBoss() {
     }
     ctx.fillStyle = bossColor;
 
-    if (isEnraged) {
+    if (boss.isHealing) {
+        ctx.shadowColor = '#00FF00';
+        ctx.shadowBlur = 30;
+    } else if (isEnraged) {
         ctx.shadowColor = '#FF0000';
         ctx.shadowBlur = 25;
     } else {
@@ -460,6 +499,12 @@ export function drawBoss() {
     const barX = 20;
     const barWidth = canvas.width - 40; // Barra mais longa
     const hpPercent = boss.hp / boss.maxHp;
+
+    if (boss.isHealing) {
+        ctx.shadowColor = '#FF0000';
+        ctx.shadowBlur = 40;
+    }
+
     ctx.fillStyle = '#444';
     ctx.fillRect(barX, 20, barWidth, 20);
     ctx.fillStyle = '#FF4444';
@@ -477,4 +522,5 @@ export function drawBoss() {
         ctx.lineWidth = 1;
     }
     ctx.strokeRect(barX, 20, barWidth, 20);
+    ctx.shadowBlur = 0;
 }
