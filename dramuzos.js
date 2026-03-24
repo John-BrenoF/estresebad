@@ -84,9 +84,8 @@ export function updateDramuzos(bird, onCollision) {
     // --- Lógica do Raio de Sangue (Blood Lightning) ---
     // 14% de chance a cada 20 frames (1 segundo)
     if (gameProps.frames % 20 === 0 && Math.random() < 0.14) {
-        // Definição do ângulo: 20% chance de 90 graus, caso contrário 48.8 graus
-        const isVertical = Math.random() < 0.20;
-        const angleDeg = isVertical ? 90 : 48.8;
+        // Definição do ângulo: Diagonal subindo para direita / descendo para esquerda
+        const angleDeg = -45; 
         const angleRad = angleDeg * (Math.PI / 180);
 
         dramuzos.bloodLightnings.push({
@@ -238,16 +237,32 @@ export function drawDramuzos() {
             ctx.fillRect(-length/2, -2, length, 4);
         } else if (b.phase === 'strike') {
             // Raio Principal
-            ctx.shadowColor = '#FF0000';
-            ctx.shadowBlur = 30;
-            ctx.fillStyle = '#8B0000'; // Vermelho Sangue
-            ctx.fillRect(-length/2, -b.width/2, length, b.width);
+            // Animação: Varia a largura e o blur para dar efeito de pulsação elétrica
+            const pulse = Math.random() * 10;
+            const currentWidth = b.width + pulse;
             
-            // Núcleo branco/rosado
-            ctx.fillStyle = '#FFC0CB';
-            ctx.fillRect(-length/2, -b.width/4, length, b.width/2);
+            ctx.shadowColor = '#FF0000';
+            ctx.shadowBlur = 30 + Math.random() * 20;
+            ctx.fillStyle = '#8B0000'; // Vermelho Sangue
+            ctx.fillRect(-length/2, -currentWidth/2, length, currentWidth);
+            
+            // Núcleo interno instável
+            ctx.fillStyle = '#FF4444';
+            ctx.fillRect(-length/2, -currentWidth/4, length, currentWidth/2);
             
             ctx.shadowBlur = 0;
+
+            // Efeito de Eletricidade/Raio interno (Zigue-Zague)
+            ctx.strokeStyle = '#FFC0CB'; // Rosado brilhante
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            let lx = -length/2;
+            ctx.moveTo(lx, 0);
+            while (lx < length/2) {
+                lx += Math.random() * 30 + 10; // Avança
+                ctx.lineTo(lx, (Math.random() - 0.5) * currentWidth); // Varia na vertical local
+            }
+            ctx.stroke();
         }
 
         ctx.restore();
