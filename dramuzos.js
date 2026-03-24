@@ -22,7 +22,8 @@ export const dramuzos = {
     invertAttackCheckTimer: 0,
     tookDamageSinceLastInvertCheck: false,
     lasers: [],
-    breathParticles: [] // Partículas do Bafo da Morte
+    breathParticles: [], // Partículas do Bafo da Morte
+    miniBats: [] // Novos Mini Morcegos
 };
 
 export function initDramuzos() {
@@ -41,6 +42,7 @@ export function initDramuzos() {
     dramuzos.tookDamageSinceLastInvertCheck = false;
     dramuzos.lasers = [];
     dramuzos.breathParticles = [];
+    dramuzos.miniBats = [];
 }
 
 export function updateDramuzos(bird, onCollision) {
@@ -61,11 +63,17 @@ export function updateDramuzos(bird, onCollision) {
     dramuzos.timer--;
     if (dramuzos.timer <= 0) {
         if (dramuzos.state === 'idle') {
+            const rand = Math.random();
             // 10% de chance de usar o ataque teleguiado
-            if (Math.random() < 0.10) {
+            if (rand < 0.10) {
                 dramuzos.state = 'attack_homing';
                 dramuzos.attackTimer = 0;
                 dramuzos.timer = 180; // 3 segundos
+            } else if (rand < 0.20) { 
+                // 10% de chance (0.1 a 0.2) de usar Mini Morcegos
+                dramuzos.state = 'attack_minibats';
+                dramuzos.attackTimer = 0;
+                dramuzos.timer = 150; // Duração do ataque
             } else {
                 // Escolhe um ataque aleatório dos outros
                 const attacks = ['attack_soundwave', 'attack_laser', 'attack_breath'];
@@ -93,7 +101,7 @@ export function updateDramuzos(bird, onCollision) {
     if (dramuzos.invertAttackCheckTimer >= 600) {
         dramuzos.invertAttackCheckTimer = 0;
         // 15% de chance se tomou dano nesse intervalo
-        if (dramuzos.tookDamageSinceLastInvertCheck && Math.random() < 0.15) {
+        if (dramuzos.tookDamageSinceLastInvertCheck && Math.random() < 0.07) { // Reduzido para 7%
             gameProps.areControlsInverted = true;
             gameProps.invertControlsTimer = 180; // 3 segundos
             playGlitch(); // Som de confusão
@@ -187,6 +195,24 @@ export function updateDramuzos(bird, onCollision) {
                 type: 'homing_orb' // Tipo novo
             });
             playBossLaser();
+        }
+    }
+
+    // NOVO: Ataque Mini Morcegos (Mini Bats)
+    if (dramuzos.state === 'attack_minibats') {
+        dramuzos.attackTimer++;
+        // Solta um morcego a cada 15 frames (rajada lenta) até 4 morcegos
+        if (dramuzos.attackTimer % 15 === 0 && dramuzos.attackTimer < 70) {
+            const angle = Math.atan2((bird.y + bird.height/2) - (dramuzos.y + 40), (bird.x + bird.width/2) - dramuzos.x);
+            dramuzos.miniBats.push({
+                x: dramuzos.x,
+                y: dramuzos.y + 40,
+                vx: Math.cos(angle) * 3.5, // Lentos
+                vy: Math.sin(angle) * 3.5,
+                life: 78, // 1.3 segundos (1.3 * 60)
+                size: 15
+            });
+            playBossLaser(); // Som de disparo
         }
     }
 
@@ -308,6 +334,31 @@ export function updateDramuzos(bird, onCollision) {
         if (b.life <= 0) {
             dramuzos.breathParticles.splice(i, 1);
             i--;
+        }
+    }
+
+    // NOVO: Atualizar Mini Morcegos
+    for (let i = 0; i < dramuzos.miniBats.length; i++) {
+        let mb = dramuzos.miniBats[i];
+        mb.x += mb.vx;
+        mb.y += mb.vy;
+        mb.life--;
+
+        // Colisão com o Player
+        const dx = (bird.x + bird.width/2) - mb.x;
+        const dy = (bird.y + bird.height/2) - mb.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+
+        if (dist < mb.size + bird.width/2) {
+            if (!gameProps.isImmune && !gameProps.isPlayerShieldActive) {
+                onCollision();
+            }
+            mb.life = 0; // Some ao colidir
+        }
+
+        if (mb.life <= 0) {
+            dramuzos.miniBats.splice(i, 1);
+            i--; // Ajusta índice após remoção
         }
     }
 
@@ -490,6 +541,25 @@ export function drawDramuzos() {
         ctx.fillStyle = isToxic ? '#32CD32' : '#2F4F4F';
         ctx.beginPath();
         ctx.arc(b.x, b.y, b.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    });
+
+    // NOVO: Desenhar Mini Morcegos
+    dramuzos.miniBats.forEach(mb => {
+        ctx.save();
+        ctx.translate(mb.x, mb.y);
+        // Gira na direção do movimento
+        ctx.rotate(Math.atan2(mb.vy, mb.vx));
+        
+        ctx.fillStyle = '#220033'; // Roxo escuro
+        ctx.beginPath();
+        // Corpo e Asas simples
+        ctx.arc(0, 0, 6, 0, Math.PI * 2); // Corpo
+        // Asas batendo (animação simples baseada na vida)
+        const wingY = Math.sin(mb.life * 0.5) * 8;
+        ctx.moveTo(0, 0); ctx.lineTo(-10, wingY); ctx.lineTo(-5, 0);
+        ctx.moveTo(0, 0); ctx.lineTo(10, wingY); ctx.lineTo(5, 0);
         ctx.fill();
         ctx.restore();
     });
