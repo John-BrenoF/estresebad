@@ -17,7 +17,8 @@ export const dramuzos = {
     timer: 0,
     attackTimer: 0,
     frame: 0,
-    projectiles: [] // Usado para as ondas sonoras
+    projectiles: [], // Usado para as ondas sonoras
+    bloodLightnings: [] // Novo array para os raios de sangue
 };
 
 export function initDramuzos() {
@@ -31,6 +32,7 @@ export function initDramuzos() {
     dramuzos.attackTimer = 0;
     dramuzos.frame = 0;
     dramuzos.projectiles = [];
+    dramuzos.bloodLightnings = [];
 }
 
 export function updateDramuzos(bird, onCollision) {
@@ -72,10 +74,80 @@ export function updateDramuzos(bird, onCollision) {
                 x: dramuzos.x + dramuzos.width / 2, // Sai do centro do boss
                 y: dramuzos.y + dramuzos.height / 2,
                 radius: 10,
-                maxRadius: canvas.width * 1.5, // Cobre a tela toda
+                maxRadius: (canvas.width * 1.5) * 0.56, // Reduzido para 56% do tamanho original
                 speed: 6,
                 width: 20 // Espessura da onda
             });
+        }
+    }
+
+    // --- Lógica do Raio de Sangue (Blood Lightning) ---
+    // 14% de chance a cada 20 frames (1 segundo)
+    if (gameProps.frames % 20 === 0 && Math.random() < 0.14) {
+        // Definição do ângulo: 20% chance de 90 graus, caso contrário 48.8 graus
+        const isVertical = Math.random() < 0.20;
+        const angleDeg = isVertical ? 90 : 48.8;
+        const angleRad = angleDeg * (Math.PI / 180);
+
+        dramuzos.bloodLightnings.push({
+            x: bird.x + bird.width / 2, // Mira no player
+            y: bird.y + bird.height / 2,
+            angle: angleRad,
+            width: 40,
+            timer: 45, // Tempo de aviso (warning)
+            phase: 'warning',
+            active: true
+        });
+    }
+
+    // Atualizar Raios de Sangue
+    for (let i = 0; i < dramuzos.bloodLightnings.length; i++) {
+        let b = dramuzos.bloodLightnings[i];
+        b.timer--;
+
+        if (b.phase === 'warning') {
+            if (b.timer <= 0) {
+                b.phase = 'strike';
+                b.timer = 15; // Duração do raio ativo
+                triggerScreenShake(10, 10);
+                // Som de trovão (reutilizando existente ou novo se houver)
+            }
+        } else if (b.phase === 'strike') {
+            // Verifica colisão apenas no primeiro frame do strike ou durante todo ele?
+            // Vamos verificar enquanto estiver ativo, mas processar o efeito apenas uma vez
+            if (b.active && !gameProps.isImmune && !gameProps.isPlayerShieldActive) {
+                // Lógica de colisão de linha rotacionada simplificada (Check proximo ao centro)
+                // Como o raio é desenhado centrado em b.x, b.y com rotação:
+                const dx = (bird.x + bird.width/2) - b.x;
+                const dy = (bird.y + bird.height/2) - b.y;
+                // Rotaciona o ponto do pássaro para o sistema de coordenadas do raio
+                const rotX = dx * Math.cos(-b.angle) - dy * Math.sin(-b.angle);
+                const rotY = dx * Math.sin(-b.angle) + dy * Math.cos(-b.angle);
+                
+                // Verifica se está dentro da largura do raio (eixo Y local pós rotação, pois raio é desenhado no eixo X ou Y dependendo da implementação)
+                // Aqui assumimos desenhar uma linha longa cruzando o ponto (b.x, b.y)
+                // Distância perpendicular à linha
+                const dist = Math.abs(dx * Math.sin(b.angle) - dy * Math.cos(b.angle)); // Distância ponto-reta
+                
+                if (dist < b.width / 2) {
+                    b.active = false; // Já atingiu, não atinge de novo no mesmo raio
+                    const chance = Math.random();
+                    
+                    if (chance < 0.40) { // 40% Morre
+                        onCollision();
+                    } else if (chance < 0.50) { // 10% Regenera Boss (0.40 a 0.50)
+                        const missingHp = dramuzos.maxHp - dramuzos.hp;
+                        dramuzos.hp += missingHp * 0.15;
+                        createParticles(dramuzos.x + dramuzos.width/2, dramuzos.y + dramuzos.height/2, '#00FF00', 20);
+                    } 
+                    // 50% Sobrevive (Nada acontece, além do susto)
+                }
+            }
+            
+            if (b.timer <= 0) {
+                dramuzos.bloodLightnings.splice(i, 1);
+                i--;
+            }
         }
     }
 
@@ -151,6 +223,35 @@ function defeatDramuzos(onCollision) {
 
 export function drawDramuzos() {
     if (!dramuzos.active || dramuzos.isDefeated) return;
+
+    // Desenhar Raios de Sangue
+    dramuzos.bloodLightnings.forEach(b => {
+        ctx.save();
+        ctx.translate(b.x, b.y);
+        ctx.rotate(b.angle);
+
+        const length = canvas.height * 2; // Comprimento para sair da tela
+
+        if (b.phase === 'warning') {
+            // Linha fina de aviso
+            ctx.fillStyle = `rgba(255, 0, 0, ${0.3 + Math.random() * 0.2})`;
+            ctx.fillRect(-length/2, -2, length, 4);
+        } else if (b.phase === 'strike') {
+            // Raio Principal
+            ctx.shadowColor = '#FF0000';
+            ctx.shadowBlur = 30;
+            ctx.fillStyle = '#8B0000'; // Vermelho Sangue
+            ctx.fillRect(-length/2, -b.width/2, length, b.width);
+            
+            // Núcleo branco/rosado
+            ctx.fillStyle = '#FFC0CB';
+            ctx.fillRect(-length/2, -b.width/4, length, b.width/2);
+            
+            ctx.shadowBlur = 0;
+        }
+
+        ctx.restore();
+    });
 
     // Desenhar Ondas Sonoras
     dramuzos.projectiles.forEach(p => {
