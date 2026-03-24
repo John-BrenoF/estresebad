@@ -12,6 +12,12 @@ export function resetRain() {
     // Se chover, tem 20% de chance de ter vento forte
     gameProps.isWindy = gameProps.isRaining && Math.random() < 0.20;
 
+    // Força chuva de sangue no modo Dramuzos
+    if (gameProps.isDramuzosMode) {
+        gameProps.isRaining = true;
+        gameProps.isWindy = true; // Vento dramático
+    }
+
     if (gameProps.isRaining) {
         // Duração entre 4s e 8s
         const duration = Math.random() * 4 + 4;
@@ -49,7 +55,10 @@ export function updateAndDrawRain() {
         }
     }
 
-    ctx.strokeStyle = 'rgba(174, 194, 224, 0.5)';
+    // Cor da chuva: Vermelho sangue no modo Dramuzos, Azul claro normal
+    const rainColor = gameProps.isDramuzosMode ? 'rgba(220, 20, 60, 0.6)' : 'rgba(174, 194, 224, 0.5)';
+    
+    ctx.strokeStyle = rainColor;
     ctx.lineWidth = 1;
     ctx.beginPath();
 

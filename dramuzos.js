@@ -63,8 +63,8 @@ export function updateDramuzos(bird, onCollision) {
     // Lógica do Ataque de Onda Sonora
     if (dramuzos.state === 'attack_soundwave') {
         dramuzos.attackTimer++;
-        // Dispara uma onda a cada 60 frames (1 segundo)
-        if (dramuzos.attackTimer % 60 === 0) {
+        // Dispara uma onda a cada 100 frames (~1.6 segundos) - Mais lento para dar tempo de desviar
+        if (dramuzos.attackTimer % 100 === 0) {
             playSoundWave();
             triggerScreenShake(5, 10);
             dramuzos.projectiles.push({
@@ -94,9 +94,10 @@ export function updateDramuzos(bird, onCollision) {
             // Calcula o ângulo entre o centro da onda e o pássaro
             const angle = Math.atan2(dy, dx);
             
-            // Verifica se o ângulo está dentro do cone do "WiFi" (aprox. 135 a 225 graus, apontando para a esquerda)
-            // abs(angle) > 3*PI/4 garante que estamos no quadrante esquerdo
-            const inCone = Math.abs(angle) > (Math.PI * 0.75);
+            // Verifica se o ângulo está dentro do cone do "WiFi" REDUZIDO (60% do tamanho original)
+            // Antes era 0.75 PI (90 graus). Agora usamos 0.85 PI (aprox 54 graus)
+            // Isso fecha o leque, exigindo menos movimento vertical para esquivar
+            const inCone = Math.abs(angle) > (Math.PI * 0.85);
 
             // Se a distância estiver na faixa da onda E estiver dentro do ângulo do cone
             if (dist >= p.radius - p.width && dist <= p.radius + p.width && inCone) {
@@ -156,8 +157,8 @@ export function drawDramuzos() {
         if (p.type === 'soundwave') {
         ctx.save();
         ctx.beginPath();
-            // Desenha apenas o arco do "WiFi" (Cone esquerdo: 135 a 225 graus)
-            ctx.arc(p.x, p.y, p.radius, Math.PI * 0.75, Math.PI * 1.25);
+            // Desenha apenas o arco do "WiFi" reduzido (Cone esquerdo mais fechado)
+            ctx.arc(p.x, p.y, p.radius, Math.PI * 0.85, Math.PI * 1.15);
         ctx.strokeStyle = `rgba(0, 255, 255, ${1 - (p.radius / p.maxRadius)})`; // Cyan fade out
         ctx.lineWidth = p.width;
         ctx.stroke();
