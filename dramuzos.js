@@ -7,8 +7,8 @@ import { createParticles } from './particles.js';
 export const dramuzos = {
     x: 0,
     y: 0,
-    width: 120, // Maior que o boss normal
-    height: 100,
+    width: 90, // Reduzido (era 120)
+    height: 80, // Reduzido (era 100)
     active: false,
     hp: 400,
     maxHp: 408,
@@ -21,7 +21,8 @@ export const dramuzos = {
     bloodLightnings: [], // Novo array para os raios de sangue
     invertAttackCheckTimer: 0,
     tookDamageSinceLastInvertCheck: false,
-    lasers: []
+    lasers: [],
+    breathParticles: [] // Partículas do Bafo da Morte
 };
 
 export function initDramuzos() {
@@ -39,6 +40,7 @@ export function initDramuzos() {
     dramuzos.invertAttackCheckTimer = 0;
     dramuzos.tookDamageSinceLastInvertCheck = false;
     dramuzos.lasers = [];
+    dramuzos.breathParticles = [];
 }
 
 export function updateDramuzos(bird, onCollision) {
@@ -59,15 +61,24 @@ export function updateDramuzos(bird, onCollision) {
     dramuzos.timer--;
     if (dramuzos.timer <= 0) {
         if (dramuzos.state === 'idle') {
-            // Escolhe um ataque aleatório
-            const attacks = ['attack_soundwave', 'attack_laser'];
-            dramuzos.state = attacks[Math.floor(Math.random() * attacks.length)];
-            dramuzos.attackTimer = 0;
-            
-            if (dramuzos.state === 'attack_soundwave') {
-                dramuzos.timer = 300; // Duração do ataque de onda (5s)
-            } else { // attack_laser
-                dramuzos.timer = 240; // Duração do ataque de laser (4s)
+            // 10% de chance de usar o ataque teleguiado
+            if (Math.random() < 0.10) {
+                dramuzos.state = 'attack_homing';
+                dramuzos.attackTimer = 0;
+                dramuzos.timer = 180; // 3 segundos
+            } else {
+                // Escolhe um ataque aleatório dos outros
+                const attacks = ['attack_soundwave', 'attack_laser', 'attack_breath'];
+                dramuzos.state = attacks[Math.floor(Math.random() * attacks.length)];
+                dramuzos.attackTimer = 0;
+                
+                if (dramuzos.state === 'attack_soundwave') {
+                    dramuzos.timer = 300; // Duração do ataque de onda (5s)
+                } else if (dramuzos.state === 'attack_laser') {
+                    dramuzos.timer = 240; // Duração do ataque de laser (4s)
+                } else if (dramuzos.state === 'attack_breath') {
+                    dramuzos.timer = 180; // Reduzido duração pois é tiro único
+                }
             }
         } else {
             dramuzos.state = 'idle';
@@ -126,6 +137,56 @@ export function updateDramuzos(bird, onCollision) {
                 warning: true, 
                 timer: 14 // 10% mais rápido que o do boss normal (16 -> ~14)
             });
+        }
+    }
+
+    // NOVO: Ataque Bafo da Morte (Breath of Death)
+    if (dramuzos.state === 'attack_breath') {
+        dramuzos.attackTimer++;
+        
+        // ALTERADO: Rajada única direcional (Shotgun de fumaça) ao invés de contínuo
+        if (dramuzos.attackTimer === 30) {
+            // Origem na "boca" do boss
+            const startX = dramuzos.x + 20;
+            const startY = dramuzos.y + 50;
+            
+            // Calcula ângulo em direção ao player com leve dispersão
+            const dx = (bird.x + bird.width/2) - startX;
+            const dy = (bird.y + bird.height/2) - startY;
+            const baseAngle = Math.atan2(dy, dx);
+
+            // Dispara 15 partículas de uma vez (rajada)
+            for (let i = 0; i < 15; i++) {
+                const angle = baseAngle + (Math.random() - 0.5) * 0.5; // Dispersão em cone
+                dramuzos.breathParticles.push({
+                    x: startX,
+                    y: startY,
+                    vx: Math.cos(angle) * (6 + Math.random() * 3), // Mais rápido
+                    vy: Math.sin(angle) * (6 + Math.random() * 3),
+                    life: 1.0, // Vida cheia (100%)
+                    maxLife: 1.0,
+                    size: 12 + Math.random() * 8
+                });
+            }
+            playBossLaser(); // Som de disparo
+        }
+    }
+
+    // NOVO: Ataque Teleguiado (Homing) - 10% chance
+    if (dramuzos.state === 'attack_homing') {
+        dramuzos.attackTimer++;
+        // Dispara 2 orbes teleguiados
+        if (dramuzos.attackTimer === 30 || dramuzos.attackTimer === 80) {
+            const angle = Math.atan2((bird.y + bird.height/2) - (dramuzos.y + 40), (bird.x + bird.width/2) - dramuzos.x);
+            dramuzos.projectiles.push({
+                x: dramuzos.x, 
+                y: dramuzos.y + 40,
+                vx: Math.cos(angle) * 5, 
+                vy: Math.sin(angle) * 5,
+                size: 14, 
+                type: 'homing_orb' // Tipo novo
+            });
+            playBossLaser();
         }
     }
 
@@ -213,6 +274,43 @@ export function updateDramuzos(bird, onCollision) {
         }
     });
 
+    // NOVO: Atualizar Partículas do Bafo da Morte
+    for (let i = 0; i < dramuzos.breathParticles.length; i++) {
+        let b = dramuzos.breathParticles[i];
+        b.x += b.vx;
+        b.y += b.vy;
+        b.size += 0.3; // Fumaça expande
+        b.life -= 0.015; // Fumaça desaparece gradualmente
+
+        // Colisão com o Player
+        const dx = (bird.x + bird.width/2) - b.x;
+        const dy = (bird.y + bird.height/2) - b.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+
+        if (dist < b.size + bird.width/2) {
+            if (!gameProps.isImmune && !gameProps.isPlayerShieldActive) {
+                // Lógica de Letalidade baseada na "vida" da fumaça
+                // Quanto mais some (menor life), menor a chance de matar
+                // Perde 10% a cada vez enfraquecida (proporcional ao life)
+                const killChance = b.life; 
+
+                if (Math.random() < killChance) {
+                    onCollision();
+                } else {
+                    // Sobreviveu (efeito visual de tosse/fumaça)
+                    createParticles(bird.x, bird.y, '#555', 2);
+                }
+            }
+            // Remove partícula após colisão para não hitar múltiplos frames seguidos
+            b.life = 0; 
+        }
+
+        if (b.life <= 0) {
+            dramuzos.breathParticles.splice(i, 1);
+            i--;
+        }
+    }
+
     // Atualizar Projéteis (Ondas Sonoras)
     for (let i = 0; i < dramuzos.projectiles.length; i++) {
         let p = dramuzos.projectiles[i];
@@ -252,6 +350,32 @@ export function updateDramuzos(bird, onCollision) {
             if (p.radius > p.maxRadius) {
                 dramuzos.projectiles.splice(i, 1);
                 i--;
+            }
+            continue;
+        }
+        
+        // Lógica para Orbes Teleguiados (Homing Orb)
+        if (p.type === 'homing_orb') {
+            p.x += p.vx;
+            p.y += p.vy;
+            
+            // Colisão simples circular
+            const dx = (bird.x + bird.width/2) - p.x;
+            const dy = (bird.y + bird.height/2) - p.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            
+            if (dist < p.size + bird.width/2) {
+                 if (!gameProps.isImmune && !gameProps.isPlayerShieldActive) {
+                     onCollision();
+                 }
+                 dramuzos.projectiles.splice(i, 1);
+                 i--;
+            }
+            
+            // Remove se sair da tela
+            if (p.x < -50 || p.y < -50 || p.y > canvas.height + 50 || p.x > canvas.width + 50) {
+                 dramuzos.projectiles.splice(i, 1);
+                 i--;
             }
             continue;
         }
@@ -357,6 +481,19 @@ export function drawDramuzos() {
         }
     });
 
+    // NOVO: Desenhar Bafo da Morte
+    dramuzos.breathParticles.forEach(b => {
+        ctx.save();
+        ctx.globalAlpha = b.life; // Opacidade baseada na vida
+        // Cor oscila entre verde tóxico e cinza escuro
+        const isToxic = Math.random() > 0.5;
+        ctx.fillStyle = isToxic ? '#32CD32' : '#2F4F4F';
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    });
+
     // Desenhar Ondas Sonoras
     dramuzos.projectiles.forEach(p => {
         if (p.type === 'soundwave') {
@@ -368,6 +505,15 @@ export function drawDramuzos() {
         ctx.lineWidth = p.width;
         ctx.stroke();
         ctx.restore();
+        } else if (p.type === 'homing_orb') {
+            // Desenho do Orbe Teleguiado (Roxo/Negro)
+            ctx.beginPath();
+            ctx.fillStyle = '#4B0082'; // Indigo
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.lineWidth = 2;
+            ctx.stroke();
         } else if (p.type === 'player_shot' || p.type === 'player_shot_red') {
             // Desenha os tiros do jogador corretamente
             ctx.beginPath();
