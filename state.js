@@ -70,7 +70,8 @@ export const gameProps = {
     isCoinTransformActive: false,
     coinTransformTimer: 0,
     areControlsInverted: false,
-    invertControlsTimer: 0
+    invertControlsTimer: 0,
+    miniBatsDestroyed: 0
 };
 
 export function resetGameProps() {
@@ -131,4 +132,5 @@ export function resetGameProps() {
     gameProps.coinTransformTimer = 0;
     gameProps.areControlsInverted = false;
     gameProps.invertControlsTimer = 0;
+    gameProps.miniBatsDestroyed = 0;
 }

@@ -11,6 +11,7 @@ const ACHIEVEMENTS = [
     { id: 'buy_5_skins', name: 'Colecionador', type: 'skins', count: 5, unlocked: false },
     { id: 'boss_no_damage', name: 'Intocável', type: 'boss_no_damage', reward: 1000, unlocked: false },
     { id: 'defeat_tosmos', name: 'Derrota do Boss Tosmos', type: 'defeat_boss', reward: 500, unlocked: false },
+    { id: 'pest_exterminator', name: 'Exterminador de Pragas', type: 'destroy_minibats', count: 10, reward: 300, unlocked: false, isSecret: true },
 ];
 
 const notificationQueue = [];
@@ -83,6 +84,16 @@ export function checkBossAchievements() {
         tosmosAch.unlocked = true;
         saveTotalCoins(tosmosAch.reward);
         showNotification(tosmosAch);
+        saveAchievements();
+    }
+}
+
+export function checkMiniBatAchievement() {
+    const ach = ACHIEVEMENTS.find(a => a.id === 'pest_exterminator' && !a.unlocked);
+    if (ach && gameProps.miniBatsDestroyed >= ach.count) {
+        ach.unlocked = true;
+        saveTotalCoins(ach.reward);
+        showNotification(ach);
         saveAchievements();
     }
 }

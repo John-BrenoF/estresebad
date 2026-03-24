@@ -3,6 +3,7 @@ import { saveTotalCoins } from './storage.js';
 import { triggerScreenShake } from './main.js';
 import { playBossDefeated, playSoundWave, playExplosion, playGlitch, playBossLaser } from './audio.js';
 import { createParticles } from './particles.js';
+import { checkMiniBatAchievement } from './achievements.js';
 
 export const dramuzos = {
     x: 0,
@@ -163,14 +164,17 @@ export function updateDramuzos(bird, onCollision) {
             const dy = (bird.y + bird.height/2) - startY;
             const baseAngle = Math.atan2(dy, dx);
 
-            // Dispara 15 partículas de uma vez (rajada)
-            for (let i = 0; i < 15; i++) {
+            // Dispara 8 partículas (Reduzido de 15 para facilitar o desvio)
+            for (let i = 0; i < 8; i++) {
                 const angle = baseAngle + (Math.random() - 0.5) * 0.5; // Dispersão em cone
+                // Velocidade Reduzida em 24.3%
+                // Antes: 6 a 9. Agora: ~4.5 a ~6.8
+                const speed = 4.5 + Math.random() * 2.3;
                 dramuzos.breathParticles.push({
                     x: startX,
                     y: startY,
-                    vx: Math.cos(angle) * (6 + Math.random() * 3), // Mais rápido
-                    vy: Math.sin(angle) * (6 + Math.random() * 3),
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
                     life: 1.0, // Vida cheia (100%)
                     maxLife: 1.0,
                     size: 12 + Math.random() * 8
@@ -209,8 +213,9 @@ export function updateDramuzos(bird, onCollision) {
                 y: dramuzos.y + 40,
                 vx: Math.cos(angle) * 3.5, // Lentos
                 vy: Math.sin(angle) * 3.5,
-                life: 78, // 1.3 segundos (1.3 * 60)
-                size: 15
+                life: 132, // Aumentado para 2.2 segundos (2.2 * 60)
+                size: 15,
+                trail: [] // Array para o rastro visual
             });
             playBossLaser(); // Som de disparo
         }
@@ -340,9 +345,20 @@ export function updateDramuzos(bird, onCollision) {
     // NOVO: Atualizar Mini Morcegos
     for (let i = 0; i < dramuzos.miniBats.length; i++) {
         let mb = dramuzos.miniBats[i];
+        
+        // Lógica de Perseguição (Homing)
+        // Recalcula o ângulo para o pássaro a cada frame para seguir
+        const angleToBird = Math.atan2((bird.y + bird.height/2) - mb.y, (bird.x + bird.width/2) - mb.x);
+        mb.vx = Math.cos(angleToBird) * 3.5;
+        mb.vy = Math.sin(angleToBird) * 3.5;
+
         mb.x += mb.vx;
         mb.y += mb.vy;
         mb.life--;
+        
+        // Adiciona posição atual ao rastro (Echo Effect)
+        mb.trail.push({ x: mb.x, y: mb.y, rotation: Math.atan2(mb.vy, mb.vx) });
+        if (mb.trail.length > 5) mb.trail.shift(); // Mantém apenas os últimos 5 frames
 
         // Colisão com o Player
         const dx = (bird.x + bird.width/2) - mb.x;
@@ -429,6 +445,29 @@ export function updateDramuzos(bird, onCollision) {
                  i--;
             }
             continue;
+        }
+
+        // Colisão Tiro do Jogador VS Mini Morcegos
+        if (p.type === 'player_shot' || p.type === 'player_shot_red') {
+            for (let j = 0; j < dramuzos.miniBats.length; j++) {
+                let mb = dramuzos.miniBats[j];
+                const distMb = Math.sqrt(Math.pow(p.x - mb.x, 2) + Math.pow(p.y - mb.y, 2));
+                
+                if (distMb < mb.size + p.size) {
+                    // Destruiu o morcego
+                    createParticles(mb.x, mb.y, '#551A8B', 10);
+                    dramuzos.miniBats.splice(j, 1);
+                    j--;
+                    // Contabiliza para a conquista
+                    gameProps.miniBatsDestroyed++;
+                    checkMiniBatAchievement();
+                    
+                    // Remove o tiro também
+                    dramuzos.projectiles.splice(i, 1);
+                    i--;
+                    break; // Sai do loop de morcegos pois o tiro já sumiu
+                }
+            }
         }
 
         // Colisão do tiro do jogador com o Dramuzos (Adicionado para funcionar a batalha)
@@ -548,10 +587,26 @@ export function drawDramuzos() {
     // NOVO: Desenhar Mini Morcegos
     dramuzos.miniBats.forEach(mb => {
         ctx.save();
+        
+        // Desenhar Rastro (Echo Effect)
+        mb.trail.forEach((t, index) => {
+            ctx.save();
+            ctx.translate(t.x, t.y);
+            ctx.rotate(t.rotation);
+            ctx.globalAlpha = (index / mb.trail.length) * 0.4; // Fade out
+            ctx.fillStyle = '#4B0082'; // Roxo mais claro para o fantasma
+            ctx.beginPath();
+            ctx.arc(0, 0, 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        });
+
+        // Desenho Principal do Morcego
         ctx.translate(mb.x, mb.y);
         // Gira na direção do movimento
         ctx.rotate(Math.atan2(mb.vy, mb.vx));
         
+        ctx.globalAlpha = 1.0;
         ctx.fillStyle = '#220033'; // Roxo escuro
         ctx.beginPath();
         // Corpo e Asas simples
