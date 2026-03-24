@@ -1,7 +1,7 @@
 import { ctx, canvas, gameProps } from './state.js';
 import { saveTotalCoins } from './storage.js';
 import { triggerScreenShake } from './main.js';
-import { playBossDefeated, playSoundWave, playExplosion } from './audio.js';
+import { playBossDefeated, playSoundWave, playExplosion, playGlitch } from './audio.js';
 import { createParticles } from './particles.js';
 
 export const dramuzos = {
@@ -18,7 +18,9 @@ export const dramuzos = {
     attackTimer: 0,
     frame: 0,
     projectiles: [], // Usado para as ondas sonoras
-    bloodLightnings: [] // Novo array para os raios de sangue
+    bloodLightnings: [], // Novo array para os raios de sangue
+    invertAttackCheckTimer: 0,
+    tookDamageSinceLastInvertCheck: false
 };
 
 export function initDramuzos() {
@@ -33,6 +35,8 @@ export function initDramuzos() {
     dramuzos.frame = 0;
     dramuzos.projectiles = [];
     dramuzos.bloodLightnings = [];
+    dramuzos.invertAttackCheckTimer = 0;
+    dramuzos.tookDamageSinceLastInvertCheck = false;
 }
 
 export function updateDramuzos(bird, onCollision) {
@@ -62,11 +66,26 @@ export function updateDramuzos(bird, onCollision) {
         }
     }
 
+    // --- Ataque de Inverter Controles ---
+    dramuzos.invertAttackCheckTimer++;
+    // A cada 10 segundos (600 frames)
+    if (dramuzos.invertAttackCheckTimer >= 600) {
+        dramuzos.invertAttackCheckTimer = 0;
+        // 15% de chance se tomou dano nesse intervalo
+        if (dramuzos.tookDamageSinceLastInvertCheck && Math.random() < 0.15) {
+            gameProps.areControlsInverted = true;
+            gameProps.invertControlsTimer = 180; // 3 segundos
+            playGlitch(); // Som de confusão
+            createParticles(bird.x + bird.width / 2, bird.y + bird.height / 2, '#FF00FF', 30);
+        }
+        dramuzos.tookDamageSinceLastInvertCheck = false; // Reseta para o próximo ciclo
+    }
+
     // Lógica do Ataque de Onda Sonora
     if (dramuzos.state === 'attack_soundwave') {
         dramuzos.attackTimer++;
-        // Dispara uma onda a cada 100 frames (~1.6 segundos) - Mais lento para dar tempo de desviar
-        if (dramuzos.attackTimer % 100 === 0) {
+        // Dispara uma onda a cada 150 frames (2.5 segundos) - Mais lento para dar tempo de desviar
+        if (dramuzos.attackTimer % 150 === 0) {
             playSoundWave();
             triggerScreenShake(5, 10);
             dramuzos.projectiles.push({
@@ -74,7 +93,7 @@ export function updateDramuzos(bird, onCollision) {
                 x: dramuzos.x + dramuzos.width / 2, // Sai do centro do boss
                 y: dramuzos.y + dramuzos.height / 2,
                 radius: 10,
-                maxRadius: (canvas.width * 1.5) * 0.56, // Reduzido para 56% do tamanho original
+                maxRadius: (canvas.width * 1.5) * 0.40, // Reduzido para 40% do tamanho original
                 speed: 6,
                 width: 20 // Espessura da onda
             });
@@ -82,8 +101,8 @@ export function updateDramuzos(bird, onCollision) {
     }
 
     // --- Lógica do Raio de Sangue (Blood Lightning) ---
-    // 14% de chance a cada 20 frames (1 segundo)
-    if (gameProps.frames % 20 === 0 && Math.random() < 0.14) {
+    // 12% de chance a cada 40 frames (1 segundo)
+    if (gameProps.frames % 40 === 0 && Math.random() < 0.12) {
         // Definição do ângulo: Diagonal subindo para direita / descendo para esquerda
         const angleDeg = -45; 
         const angleRad = angleDeg * (Math.PI / 180);
@@ -166,14 +185,23 @@ export function updateDramuzos(bird, onCollision) {
             const angle = Math.atan2(dy, dx);
             
             // Verifica se o ângulo está dentro do cone do "WiFi" REDUZIDO (60% do tamanho original)
-            // Antes era 0.75 PI (90 graus). Agora usamos 0.85 PI (aprox 54 graus)
+            // Antes era 0.85 PI (54 graus). Agora usamos 0.90 PI (aprox 36 graus) para ser mais fácil.
             // Isso fecha o leque, exigindo menos movimento vertical para esquivar
-            const inCone = Math.abs(angle) > (Math.PI * 0.85);
+            const inCone = Math.abs(angle) > (Math.PI * 0.90);
 
             // Se a distância estiver na faixa da onda E estiver dentro do ângulo do cone
             if (dist >= p.radius - p.width && dist <= p.radius + p.width && inCone) {
                 if (!gameProps.isImmune && !gameProps.isPlayerShieldActive) {
-                    onCollision();
+                    // Chance de matar diminui com a distância (conforme a onda some)
+                    const progress = p.radius / p.maxRadius; // 0.0 a 1.0
+                    const killChance = 1.0 - (progress * 0.20); // Chance de 100% no início, 80% no fim
+
+                    if (Math.random() < killChance) {
+                        onCollision();
+                    } else {
+                        // Sobreviveu ao hit, apenas um efeito visual de "raspão"
+                        createParticles(bird.x + bird.width/2, bird.y + bird.height/2, '#FFFFFF', 5);
+                    }
                 }
             }
 
@@ -188,6 +216,7 @@ export function updateDramuzos(bird, onCollision) {
         if ((p.type === 'player_shot' || p.type === 'player_shot_red') && p.x > dramuzos.x && p.x < dramuzos.x + dramuzos.width && p.y > dramuzos.y && p.y < dramuzos.y + dramuzos.height) {
             const damage = p.type === 'player_shot_red' ? 40 : 20; // Dano base
             dramuzos.hp -= damage;
+            dramuzos.tookDamageSinceLastInvertCheck = true; // Flag para o ataque de inversão
             playExplosion();
             const particleColor = p.type === 'player_shot_red' ? '#FF4500' : '#FFFFFF';
             createParticles(p.x, p.y, particleColor, 15);
@@ -273,8 +302,8 @@ export function drawDramuzos() {
         if (p.type === 'soundwave') {
         ctx.save();
         ctx.beginPath();
-            // Desenha apenas o arco do "WiFi" reduzido (Cone esquerdo mais fechado)
-            ctx.arc(p.x, p.y, p.radius, Math.PI * 0.85, Math.PI * 1.15);
+            // Desenha apenas o arco do "WiFi" ainda mais reduzido (36 graus)
+            ctx.arc(p.x, p.y, p.radius, Math.PI * 0.90, Math.PI * 1.10);
         ctx.strokeStyle = `rgba(0, 255, 255, ${1 - (p.radius / p.maxRadius)})`; // Cyan fade out
         ctx.lineWidth = p.width;
         ctx.stroke();

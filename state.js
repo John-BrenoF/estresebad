@@ -68,7 +68,9 @@ export const gameProps = {
     hasAurora: false,
     auroraChecked: false,
     isCoinTransformActive: false,
-    coinTransformTimer: 0
+    coinTransformTimer: 0,
+    areControlsInverted: false,
+    invertControlsTimer: 0
 };
 
 export function resetGameProps() {
@@ -127,4 +129,6 @@ export function resetGameProps() {
     // isBossMode é definido no menu, não reseta aqui para false
     gameProps.isCoinTransformActive = false;
     gameProps.coinTransformTimer = 0;
+    gameProps.areControlsInverted = false;
+    gameProps.invertControlsTimer = 0;
 }

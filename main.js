@@ -188,6 +188,14 @@ function loop() {
             if (gameProps.freezeTimer <= 0) gameProps.isFrozen = false;
         }
 
+        // Atualiza Inversão de Controles
+        if (gameProps.invertControlsTimer > 0) {
+            gameProps.invertControlsTimer--;
+            if (gameProps.invertControlsTimer <= 0) {
+                gameProps.areControlsInverted = false;
+            }
+        }
+
         // Atualiza Fúria
         if (gameProps.isFuryActive) {
             gameProps.furyTimer--;

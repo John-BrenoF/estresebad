@@ -312,6 +312,20 @@ export function drawBird(x, y, width, height, rotation, wingFrame) {
         drawCompleteBat(birdColor, wingFrame);
     }
 
+    // Efeito visual de Controles Invertidos
+    if (gameProps.areControlsInverted) {
+        ctx.save();
+        ctx.rotate(-rotation); // Desfaz a rotação do pássaro para o texto ficar reto
+        ctx.fillStyle = '#FF00FF';
+        ctx.font = "bold 40px Changa";
+        ctx.textAlign = "center";
+        ctx.shadowColor = '#FF00FF';
+        ctx.shadowBlur = 15;
+        ctx.fillText('?', 0, -40);
+        ctx.shadowBlur = 0;
+        ctx.restore();
+    }
+
     ctx.restore();
     ctx.shadowBlur = 0; // Resetar shadow
 }
@@ -432,7 +446,11 @@ export const bird = {
                 gameProps.pulseScale = 1.02; // Pulsação leve (2% de zoom)
             }
         } else {
-            this.velocity = -this.jump;
+            if (gameProps.areControlsInverted) {
+                this.velocity = this.jump; // Pulo invertido (empurra para baixo)
+            } else {
+                this.velocity = -this.jump;
+            }
         }
         
         if (gameProps.shopData && gameProps.shopData.equippedSkin === 'gatouiau') {
