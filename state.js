@@ -78,7 +78,6 @@ export const gameProps = {
     totalCoins: 0,
     isShopOpen: false,
     shopData: null,
-    isStatsOpen: false,
     normalBossDefeatedCount: 0,
     dramuzosPurchased: false,
     isImmune: false,
@@ -143,7 +142,6 @@ export function resetGameProps() {
     gameProps.shopData = getShopData();
     gameProps.normalBossDefeatedCount = getBossDefeatedCount();
     gameProps.dramuzosPurchased = getDramuzosPurchased();
-    gameProps.isStatsOpen = false;
     gameProps.menuFadeInTimer = 0;
     gameProps.isImmune = false;
     gameProps.immunityTimer = 0;

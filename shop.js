@@ -1,7 +1,6 @@
 import { ctx, canvas, gameProps, u, isTouchUI, fitFont } from './state.js';
 import { SKINS, CARD_PRICE, SLOWMO_PRICE } from './constants.js';
-import { saveShopData } from './storage.js';
-import { saveTotalCoins, getTotalCoins } from './storage.js';
+import { saveShopData, saveTotalCoins } from './storage.js';
 import { playBuy, playGlitch } from './audio.js';
 import { incrementMissionProgress } from './missions.js';
 import { checkSkinAchievements } from './achievements.js';

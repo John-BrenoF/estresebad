@@ -1,5 +1,5 @@
 import { ctx, canvas, gameProps, u, UI_SCALE, isTouchUI, RENDER_SCALE, applyBaseTransform, fitFont } from './state.js';
-import { getTopScores, saveTotalCoins, saveDramuzosPurchased } from './storage.js';
+import { saveTotalCoins, saveDramuzosPurchased } from './storage.js';
 import { playBuy, playGlitch } from './audio.js';
 import { isAchievementUnlocked } from './achievements.js';
 
@@ -344,9 +344,11 @@ const hardcoreButton = { x: canvas.width / 2 - u(125), y: canvas.height / 2, w: 
 const bossButton = { x: canvas.width / 2 - u(125), y: canvas.height / 2 + u(60), w: u(250), h: u(50) };
 
 // Ajuste de posições para caber o Dramuzos
-const shopButton = { x: canvas.width / 2 - u(130), y: canvas.height / 2 + u(190), w: u(80), h: u(50) };
-const missionsButton = { x: canvas.width / 2 - u(40), y: canvas.height / 2 + u(190), w: u(80), h: u(50) };
-const statsButton = { x: canvas.width / 2 + u(50), y: canvas.height / 2 + u(190), w: u(80), h: u(50) };
+const menuBtnW = u(80);
+const menuBtnGap = u(20);
+const menuRowStartX = canvas.width / 2 - menuBtnW - menuBtnGap / 2;
+const shopButton = { x: menuRowStartX, y: canvas.height / 2 + u(190), w: menuBtnW, h: u(50) };
+const missionsButton = { x: menuRowStartX + menuBtnW + menuBtnGap, y: canvas.height / 2 + u(190), w: menuBtnW, h: u(50) };
 
 
 // Função auxiliar para desenhar botões 3D
@@ -415,14 +417,14 @@ export function drawStartScreen() {
         ctx.save();
         ctx.globalCompositeOperation = 'screen';
         ctx.fillStyle = 'rgba(255, 0, 0, 0.7)';
-        ctx.fillText("MORCEGO FLAP", xOff, yOff);
+        ctx.fillText("ESTRESSEBAD", xOff, yOff);
         ctx.fillStyle = 'rgba(0, 255, 255, 0.7)';
-        ctx.fillText("MORCEGO FLAP", -xOff, -yOff);
+        ctx.fillText("ESTRESSEBAD", -xOff, -yOff);
         ctx.restore();
     }
 
     ctx.fillStyle = '#8A2BE2'; // Roxo
-    ctx.fillText("MORCEGO FLAP", 0, 0);
+    ctx.fillText("ESTRESSEBAD", 0, 0);
     ctx.restore();
     
     ctx.textAlign = "center"; // Centraliza o texto para todos os botões
@@ -458,9 +460,6 @@ export function drawStartScreen() {
 
     // Botão Missões
     draw3DButton(missionsButton, '#6A0DAD', "Missões", "22px");
-
-    // Botão Estatísticas
-    draw3DButton(statsButton, '#6A0DAD', "Stats", "22px");
 
     ctx.textAlign = "left";
 }
@@ -506,10 +505,6 @@ export function handleMenuClick(x, y) {
     // Clicou em Missões
     if (x > missionsButton.x && x < missionsButton.x + missionsButton.w && y > missionsButton.y && y < missionsButton.y + missionsButton.h) {
         return 'missions';
-    }
-    // Clicou em Estatísticas
-    if (x > statsButton.x && x < statsButton.x + statsButton.w && y > statsButton.y && y < statsButton.y + statsButton.h) {
-        return 'stats';
     }
     return null;
 }

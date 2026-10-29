@@ -3,7 +3,7 @@ import { DELAY_TIMES } from './constants.js';
 import { checkHighScore, saveScoreToHistory, saveTotalCoins, saveShopData, getShopData, getTotalCoins } from './storage.js';
 import { bird } from './bird.js';
 import { pipes, updatePipes, drawPipes } from './pipes.js';
-import { initMovingTube, updateMovingTube, drawMovingTube, movingTube } from './movingTube.js';
+import { initMovingTube, updateMovingTube, drawMovingTube } from './movingTube.js';
 import { drawScore, drawWaitingScreen, drawGameOverScreen, drawStartScreen, handleMenuClick, attackButtonRect, shieldButtonRect, furyButtonRect, menuReturnButtonRect, immunityButtonRect, magnetButtonRect, slowMoButtonRect, exitButtonRect } from './ui.js';
 import { playDie, playShield, playSlowMo, playBossMusic, stopBossMusic, playPlayerAttack, playPlayerRedShot, playBossDefeated, playPlayerShield, playNormalMusic, stopNormalMusic, resumeAudio, playGlitch, playPowerupSound } from './audio.js';
 import { createParticles, updateAndDrawParticles, clearParticles } from './particles.js';
@@ -17,7 +17,6 @@ import { checkAchievements, drawAchievements, loadAchievements, checkBossAchieve
 import { loadMissions, updateMissionProgress, drawMissionMap, handleMissionClick, handleMissionScroll } from './missions.js';
 import { initBoss, updateBoss, drawBoss, boss } from './boss.js';
 import { updateAndDrawFakeCones, resetFakeCones } from './fakeCones.js';
-import { drawStatsScreen, handleStatsClick } from './stats.js';
 import { checkGeometryEvent, updateGeometryState, drawGeometryOverlay } from './geometry.js';
 import { initDramuzos, updateDramuzos, drawDramuzos, dramuzos } from './dramuzos.js';
  
@@ -147,14 +146,6 @@ function loop() {
     // Se o mapa de missões estiver aberto
     if (gameProps.isMissionMapOpen) {
         drawMissionMap();
-        ctx.restore();
-        requestAnimationFrame(loop);
-        return;
-    }
-
-    // Se a tela de estatísticas estiver aberta
-    if (gameProps.isStatsOpen) {
-        drawStatsScreen();
         ctx.restore();
         requestAnimationFrame(loop);
         return;
@@ -579,14 +570,6 @@ function handleInput(e) {
         return;
     }
 
-    if (gameProps.isStatsOpen) {
-        if (e.type === 'click') {
-            handleStatsClick(x, y);
-        }
-        // Poderia adicionar scroll aqui se necessário no futuro
-        return;
-    }
-
     // Para Gameplay e Menu, usamos touchstart para resposta instantânea
     const isAction = e.type === 'click' || e.type === 'touchstart';
 
@@ -629,9 +612,6 @@ function handleInput(e) {
             startWaitingPeriod();
         } else if (action === 'missions') {
             gameProps.isMissionMapOpen = true;
-            gameProps.menuFadeInTimer = 30;
-        } else if (action === 'stats') {
-            gameProps.isStatsOpen = true;
             gameProps.menuFadeInTimer = 30;
         }
         return;

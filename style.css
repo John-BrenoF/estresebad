@@ -24,15 +24,6 @@ canvas {
     user-select: none;
 }
 
-#instrucoes {
-    position: absolute;
-    top: 20px;
-    color: white;
-    font-size: 18px;
-    text-align: center;
-    pointer-events: none;
-}
-
 /* ===== Celular / tela de toque =====
    O canvas ocupa toda a tela mantendo a proporção 450x900 (sem cortes),
    sem bordas e sem permitir rolar/zoom na página. */
