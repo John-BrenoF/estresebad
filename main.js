@@ -1,10 +1,10 @@
-import { canvas, ctx, gameProps, resetGameProps } from './state.js';
+import { canvas, ctx, gameProps, resetGameProps, applyBaseTransform } from './state.js';
 import { DELAY_TIMES } from './constants.js';
 import { checkHighScore, saveScoreToHistory, saveTotalCoins, saveShopData, getShopData, getTotalCoins } from './storage.js';
 import { bird } from './bird.js';
 import { pipes, updatePipes, drawPipes } from './pipes.js';
 import { initMovingTube, updateMovingTube, drawMovingTube, movingTube } from './movingTube.js';
-import { drawScore, drawWaitingScreen, drawGameOverScreen, drawStartScreen, handleMenuClick, attackButtonRect, shieldButtonRect, furyButtonRect, menuReturnButtonRect, immunityButtonRect, magnetButtonRect, slowMoButtonRect } from './ui.js';
+import { drawScore, drawWaitingScreen, drawGameOverScreen, drawStartScreen, handleMenuClick, attackButtonRect, shieldButtonRect, furyButtonRect, menuReturnButtonRect, immunityButtonRect, magnetButtonRect, slowMoButtonRect, exitButtonRect } from './ui.js';
 import { playDie, playShield, playSlowMo, playBossMusic, stopBossMusic, playPlayerAttack, playPlayerRedShot, playBossDefeated, playPlayerShield, playNormalMusic, stopNormalMusic, resumeAudio, playGlitch, playPowerupSound } from './audio.js';
 import { createParticles, updateAndDrawParticles, clearParticles } from './particles.js';
 import { initBackground, updateAndDrawBackground } from './background.js';
@@ -106,6 +106,7 @@ function resetGame() {
 }
 
 function loop() {
+    applyBaseTransform(); // Garante a escala de renderização (2x em telas de celular)
     ctx.save();
     
     // Efeito de Pulsação (Zoom In/Out)
@@ -138,6 +139,7 @@ function loop() {
     // Se a loja estiver aberta, desenha a loja e para o loop
     if (gameProps.isShopOpen) {
         drawShop();
+        ctx.restore();
         requestAnimationFrame(loop);
         return;
     }
@@ -145,6 +147,7 @@ function loop() {
     // Se o mapa de missões estiver aberto
     if (gameProps.isMissionMapOpen) {
         drawMissionMap();
+        ctx.restore();
         requestAnimationFrame(loop);
         return;
     }
@@ -152,6 +155,7 @@ function loop() {
     // Se a tela de estatísticas estiver aberta
     if (gameProps.isStatsOpen) {
         drawStatsScreen();
+        ctx.restore();
         requestAnimationFrame(loop);
         return;
     }
@@ -159,11 +163,15 @@ function loop() {
     // Se estiver no menu, desenha o menu e retorna
     if (gameProps.isInMenu) {
         drawStartScreen();
+        ctx.restore();
         requestAnimationFrame(loop);
         return;
     }
 
-    if (gameProps.isWaitingToStart) return;
+    if (gameProps.isWaitingToStart) {
+        ctx.restore();
+        return;
+    }
 
     // Atualiza estado do Geometry Mode (Cutscene e Timer)
     updateGeometryState();
@@ -346,8 +354,8 @@ function loop() {
         // Simula um "RGB split" desenhando a tela deslocada com cores aditivas
         ctx.globalCompositeOperation = 'lighter';
         ctx.globalAlpha = 0.6;
-        ctx.drawImage(canvas, intensity, Math.random() * 8 - 4); // Canal R/G
-        ctx.drawImage(canvas, -intensity, Math.random() * 8 - 4); // Canal B/G
+        ctx.drawImage(canvas, intensity, Math.random() * 8 - 4, canvas.width, canvas.height); // Canal R/G
+        ctx.drawImage(canvas, -intensity, Math.random() * 8 - 4, canvas.width, canvas.height); // Canal B/G
         ctx.restore();
     }
 
@@ -363,8 +371,8 @@ function loop() {
             ctx.save();
             ctx.globalCompositeOperation = 'screen';
             ctx.globalAlpha = 0.7 * intensity;
-            ctx.drawImage(canvas, offset, 0);
-            ctx.drawImage(canvas, -offset, 0);
+            ctx.drawImage(canvas, offset, 0, canvas.width, canvas.height);
+            ctx.drawImage(canvas, -offset, 0, canvas.width, canvas.height);
             ctx.restore();
             
             if(gameProps.menuFadeInTimer % 5 === 0) playGlitch();
@@ -539,12 +547,15 @@ function handleInput(e) {
         clientY = e.clientY;
     }
 
-    // Calcular posição relativa ao canvas
+    // Calcular posição relativa ao canvas (normaliza para a escala lógica 450x900,
+    // já que no celular o canvas é exibido em outro tamanho na tela)
     let x, y;
     if (clientX !== undefined && clientY !== undefined) {
         const rect = canvas.getBoundingClientRect();
-        x = clientX - rect.left;
-        y = clientY - rect.top;
+        const scaleX = rect.width > 0 ? canvas.width / rect.width : 1;
+        const scaleY = rect.height > 0 ? canvas.height / rect.height : 1;
+        x = (clientX - rect.left) * scaleX;
+        y = (clientY - rect.top) * scaleY;
     }
 
     if (gameProps.isShopOpen) {
@@ -626,8 +637,7 @@ function handleInput(e) {
         return;
     }
 
-    // Botão de sair durante a partida
-    const exitButtonRect = { x: canvas.width - 40, y: canvas.height - 40, w: 30, h: 30 };
+    // Botão de sair durante a partida (retângulo compartilhado com o desenho em ui.js)
     if (!gameProps.isGameOver && !gameProps.isInMenu && isAction) {
         if (x > exitButtonRect.x && x < exitButtonRect.x + exitButtonRect.w && y > exitButtonRect.y && y < exitButtonRect.y + exitButtonRect.h) {
             gameOver();

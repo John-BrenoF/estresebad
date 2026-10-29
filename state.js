@@ -1,7 +1,58 @@
 import { getTotalCoins, getShopData, getBossDefeatedCount, getDramuzosPurchased } from './storage.js';
 
 export const canvas = document.getElementById('jogoCanvas');
+
+// ===== Detecção de celular / tela de toque =====
+function detectTouchUI() {
+    try {
+        if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) return true;
+    } catch (e) { /* navegador sem suporte, ignora */ }
+    return window.innerWidth <= 520;
+}
+export const isTouchUI = detectTouchUI();
+
+// ===== Escala da interface =====
+// No celular o canvas é exibido menor (cabe na tela), então aumentamos
+// botões, menus e textos em 25% para continuarem confortáveis ao toque.
+export const UI_SCALE = isTouchUI ? 1.25 : 1.0;
+export function u(v) {
+    return Math.round(v * UI_SCALE);
+}
+
+// ===== Alta resolução (nítido em telas de celular) =====
+// O jogo mantém toda a lógica em 450x900 (canvas.width/height continuam
+// retornando esses valores), mas o bitmap interno é renderizado em 2x.
+export const LOGICAL_WIDTH = canvas.width;   // 450
+export const LOGICAL_HEIGHT = canvas.height; // 900
+const devicePixelRatio = window.devicePixelRatio || 1;
+export const RENDER_SCALE = (isTouchUI || devicePixelRatio >= 1.5) ? 2 : 1;
+
+if (RENDER_SCALE !== 1) {
+    canvas.width = LOGICAL_WIDTH * RENDER_SCALE;
+    canvas.height = LOGICAL_HEIGHT * RENDER_SCALE;
+    // Todos os códigos do jogo continuam enxergando o tamanho lógico 450x900
+    Object.defineProperty(canvas, 'width', { get: () => LOGICAL_WIDTH, set: () => {}, configurable: true });
+    Object.defineProperty(canvas, 'height', { get: () => LOGICAL_HEIGHT, set: () => {}, configurable: true });
+}
+
 export const ctx = canvas.getContext('2d');
+if (RENDER_SCALE !== 1) ctx.scale(RENDER_SCALE, RENDER_SCALE);
+
+// Reaplica a escala de renderização (chamar no início de cada loop de desenho)
+export function applyBaseTransform() {
+    if (RENDER_SCALE !== 1) ctx.setTransform(RENDER_SCALE, 0, 0, RENDER_SCALE, 0, 0);
+}
+
+// Define a fonte reduzindo automaticamente até o texto caber no espaço
+export function fitFont(text, px, maxWidth, weight = '') {
+    let size = u(px);
+    const build = s => `${weight ? weight + ' ' : ''}${Math.round(s)}px Changa`;
+    ctx.font = build(size);
+    while (size > 9 && ctx.measureText(text).width > maxWidth) {
+        size -= 1;
+        ctx.font = build(size);
+    }
+}
 
 export const gameProps = {
     frames: 0,

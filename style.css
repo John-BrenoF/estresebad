@@ -5,15 +5,23 @@ body {
     justify-content: center;
     align-items: center;
     height: 100vh;
+    height: 100dvh;
     background-color: #000; /* Cor de fundo preto */
     font-family: 'Changa', sans-serif;
     overflow: hidden;
+    overscroll-behavior: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
 canvas {
+    width: 450px;
+    height: 900px;
     border: 4px solid #fff;
     background-color: #70c5ce;
     box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 #instrucoes {
@@ -25,3 +33,16 @@ canvas {
     pointer-events: none;
 }
 
+/* ===== Celular / tela de toque =====
+   O canvas ocupa toda a tela mantendo a proporção 450x900 (sem cortes),
+   sem bordas e sem permitir rolar/zoom na página. */
+@media (pointer: coarse), (max-width: 520px) {
+    canvas {
+        width: min(100vw, calc(100vh / 2), 450px);
+        width: min(100vw, calc(100dvh / 2), 450px);
+        height: min(200vw, 100vh, 900px);
+        height: min(200vw, 100dvh, 900px);
+        border: none;
+        box-shadow: none;
+    }
+}

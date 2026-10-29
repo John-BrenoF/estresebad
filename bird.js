@@ -1,4 +1,4 @@
-import { ctx, canvas, gameProps } from './state.js';
+import { ctx, canvas, gameProps, RENDER_SCALE } from './state.js';
 import { playJump, playGlitch, playCatJump } from './audio.js';
 import { SKINS } from './constants.js';
 import { createParticles, createGeometryTrail, createGlitchTrail } from './particles.js';
@@ -203,7 +203,7 @@ export function drawBird(x, y, width, height, rotation, wingFrame) {
         
         // Brilho Neon
         ctx.shadowColor = '#00FFFF';
-        ctx.shadowBlur = 20;
+        ctx.shadowBlur = (20) * RENDER_SCALE;
         
         // Cubo
         ctx.fillStyle = '#000';
@@ -228,11 +228,11 @@ export function drawBird(x, y, width, height, rotation, wingFrame) {
         ctx.strokeStyle = '#00FFFF';
         ctx.lineWidth = 3;
         ctx.shadowColor = '#00FFFF';
-        ctx.shadowBlur = 15;
+        ctx.shadowBlur = (15) * RENDER_SCALE;
         ctx.beginPath();
         ctx.arc(0, 0, 35, 0, Math.PI * 2);
         ctx.stroke();
-        ctx.shadowBlur = 0;
+        ctx.shadowBlur = (0) * RENDER_SCALE;
     }
 
     // Desenha o efeito do ímã se ativo
@@ -250,11 +250,11 @@ export function drawBird(x, y, width, height, rotation, wingFrame) {
         ctx.strokeStyle = '#FFFFFF';
         ctx.lineWidth = 4;
         ctx.shadowColor = '#FFFFFF';
-        ctx.shadowBlur = 15;
+        ctx.shadowBlur = (15) * RENDER_SCALE;
         ctx.beginPath();
         ctx.arc(0, 0, 45, 0, Math.PI * 2);
         ctx.stroke();
-        ctx.shadowBlur = 0;
+        ctx.shadowBlur = (0) * RENDER_SCALE;
     }
 
     // Efeito de Fúria
@@ -262,11 +262,11 @@ export function drawBird(x, y, width, height, rotation, wingFrame) {
         ctx.strokeStyle = '#FF4500'; // Laranja avermelhado
         ctx.lineWidth = 4;
         ctx.shadowColor = '#FF4500';
-        ctx.shadowBlur = 20;
+        ctx.shadowBlur = (20) * RENDER_SCALE;
         ctx.beginPath();
         ctx.arc(0, 0, 40 + Math.random() * 5, 0, Math.PI * 2); // Efeito pulsante
         ctx.stroke();
-        ctx.shadowBlur = 0;
+        ctx.shadowBlur = (0) * RENDER_SCALE;
     }
 
     const currentSkin = SKINS.find(s => s.id === gameProps.shopData.equippedSkin) || SKINS[0];
@@ -275,7 +275,7 @@ export function drawBird(x, y, width, height, rotation, wingFrame) {
     // Efeito Neon
     if (currentSkin.glow) {
         ctx.shadowColor = currentSkin.color;
-        ctx.shadowBlur = 20;
+        ctx.shadowBlur = (20) * RENDER_SCALE;
     }
 
     // Efeito Glitch para a skin específica
@@ -320,14 +320,14 @@ export function drawBird(x, y, width, height, rotation, wingFrame) {
         ctx.font = "bold 40px Changa";
         ctx.textAlign = "center";
         ctx.shadowColor = '#FF00FF';
-        ctx.shadowBlur = 15;
+        ctx.shadowBlur = (15) * RENDER_SCALE;
         ctx.fillText('?', 0, -40);
-        ctx.shadowBlur = 0;
+        ctx.shadowBlur = (0) * RENDER_SCALE;
         ctx.restore();
     }
 
     ctx.restore();
-    ctx.shadowBlur = 0; // Resetar shadow
+    ctx.shadowBlur = (0) * RENDER_SCALE; // Resetar shadow
 }
 
 export const bird = {

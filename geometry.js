@@ -1,4 +1,4 @@
-import { ctx, canvas, gameProps } from './state.js';
+import { ctx, canvas, gameProps, u, RENDER_SCALE } from './state.js';
 import { playSlowMo } from './audio.js'; // Reutilizando som de efeito
 import { triggerScreenShake } from './main.js';
 
@@ -58,25 +58,25 @@ export function drawGeometryOverlay() {
         // Efeito de piscar
         if (Math.floor(Date.now() / 100) % 2 === 0) {
             ctx.fillStyle = '#FF00FF';
-            ctx.font = "bold 40px Changa";
+            ctx.font = `bold ${u(40)}px Changa`;
             ctx.textAlign = "center";
-            ctx.fillText("⚠️ WARNING ⚠️", canvas.width / 2, canvas.height / 2 - 50);
+            ctx.fillText("⚠️ WARNING ⚠️", canvas.width / 2, canvas.height / 2 - u(50));
         }
 
         ctx.fillStyle = '#00FFFF';
-        ctx.font = "bold 30px Changa";
+        ctx.font = `bold ${u(30)}px Changa`;
         ctx.textAlign = "center";
         ctx.fillText("GEOMETRY MODE", canvas.width / 2, canvas.height / 2);
-        ctx.font = "20px Changa";
+        ctx.font = `${u(20)}px Changa`;
         ctx.fillStyle = '#FFF';
-        ctx.fillText("Prepare-se!", canvas.width / 2, canvas.height / 2 + 40);
+        ctx.fillText("Prepare-se!", canvas.width / 2, canvas.height / 2 + u(40));
         ctx.restore();
     } else if (gameProps.isGeometryMode) {
         // Barra de tempo do modo Geometry no topo
         const width = (gameProps.geometryTimer / 600) * canvas.width;
         ctx.fillStyle = '#00FFFF';
         ctx.fillRect(0, 0, width, 5);
-        ctx.shadowBlur = 10;
+        ctx.shadowBlur = (10) * RENDER_SCALE;
         ctx.shadowColor = '#00FFFF';
     }
 

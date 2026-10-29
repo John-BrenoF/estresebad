@@ -1,4 +1,4 @@
-import { ctx, canvas, gameProps } from './state.js';
+import { ctx, canvas, gameProps, RENDER_SCALE } from './state.js';
 import { createParticles, createDust } from './particles.js';
 import { playExplosion, playBuy } from './audio.js';
 import { triggerShockwave } from './main.js';
@@ -66,7 +66,7 @@ export function drawMovingTube() {
         ctx.fillStyle = '#220000';
         ctx.strokeStyle = '#FF0000'; // Vermelho Neon
         ctx.lineWidth = 4;
-        ctx.shadowBlur = 20;
+        ctx.shadowBlur = (20) * RENDER_SCALE;
         ctx.shadowColor = '#FF0000';
 
         ctx.fillRect(movingTube.x, 0, movingTube.width, movingTube.topHeight);

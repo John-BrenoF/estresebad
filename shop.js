@@ -1,4 +1,4 @@
-import { ctx, canvas, gameProps } from './state.js';
+import { ctx, canvas, gameProps, u, isTouchUI, fitFont } from './state.js';
 import { SKINS, CARD_PRICE, SLOWMO_PRICE } from './constants.js';
 import { saveShopData } from './storage.js';
 import { saveTotalCoins, getTotalCoins } from './storage.js';
@@ -12,8 +12,12 @@ const exitButton = {};
 const slowMoButton = {};
 const shopSvgSkins = {};
 let scrollY = 0;
-const itemHeight = 80;
+const itemHeight = u(80);
 const totalContentHeight = (SKINS.length + 2) * itemHeight;
+const CLIP_TOP = 140;
+const CONTENT_TOP = u(150);
+const ITEM_PITCH = u(80);
+const ITEM_H = u(70);
 
 function loadShopSvgSkins() {
     const svgSkinData = SKINS.filter(s => s.isSvg);
@@ -36,17 +40,17 @@ function setupShopLayout() {
         shopItems.push({
             ...skin,
             rect: {
-                x: 50,
-                y: 150 + index * itemHeight,
-                w: canvas.width - 100,
-                h: 70
+                x: u(50),
+                y: CONTENT_TOP + index * itemHeight,
+                w: canvas.width - u(100),
+                h: ITEM_H
             }
         });
     });
 
-    cardButton.rect = { x: 50, y: 150 + SKINS.length * itemHeight, w: canvas.width - 100, h: 70 };
-    slowMoButton.rect = { x: 50, y: 150 + (SKINS.length + 1) * itemHeight, w: canvas.width - 100, h: 70 };
-    exitButton.rect = { x: canvas.width / 2 - 75, y: canvas.height - 120, w: 150, h: 50 };
+    cardButton.rect = { x: u(50), y: CONTENT_TOP + SKINS.length * itemHeight, w: canvas.width - u(100), h: ITEM_H };
+    slowMoButton.rect = { x: u(50), y: CONTENT_TOP + (SKINS.length + 1) * itemHeight, w: canvas.width - u(100), h: ITEM_H };
+    exitButton.rect = { x: canvas.width / 2 - u(75), y: canvas.height - u(120), w: u(150), h: u(50) };
 }
 
 export function drawShop() {
@@ -61,13 +65,13 @@ export function drawShop() {
 
     // Título
     ctx.fillStyle = '#8A2BE2'; // Roxo
-    ctx.font = "bold 40px Changa";
+    ctx.font = `bold ${u(40)}px Changa`;
     ctx.textAlign = "center";
-    ctx.fillText("LOJA", canvas.width / 2, 80);
+    ctx.fillText("LOJA", canvas.width / 2, u(80));
 
     // Moedas
-    ctx.font = "24px Changa";
-    ctx.fillText(`💰 ${gameProps.totalCoins}`, canvas.width / 2, 120);
+    ctx.font = `${u(24)}px Changa`;
+    ctx.fillText(`💰 ${gameProps.totalCoins}`, canvas.width / 2, u(120));
 
     ctx.save();
     ctx.beginPath();
@@ -81,85 +85,95 @@ export function drawShop() {
         const isEquipped = gameProps.shopData.equippedSkin === item.id;
 
         ctx.fillStyle = isEquipped ? '#330033' : '#222222'; // Fundo preto, roxo escuro se equipado
-        ctx.fillRect(item.rect.x, item.rect.y, item.rect.w - 20, item.rect.h);
+        ctx.fillRect(item.rect.x, item.rect.y, item.rect.w - u(20), item.rect.h);
         ctx.strokeStyle = isEquipped ? '#6A0DAD' : '#888888'; // Borda cinza, roxa se equipado
-        ctx.strokeRect(item.rect.x, item.rect.y, item.rect.w - 20, item.rect.h);
+        ctx.strokeRect(item.rect.x, item.rect.y, item.rect.w - u(20), item.rect.h);
         
         if (item.isSvg) {
             const skinAsset = shopSvgSkins[item.id];
             if (skinAsset && skinAsset.loaded) {
                 const image = skinAsset.image;
                 const aspectRatio = image.naturalWidth / image.naturalHeight;
-                const drawHeight = 40;
+                const drawHeight = u(40);
                 const drawWidth = drawHeight * aspectRatio;
-                ctx.drawImage(image, item.rect.x + 40 - drawWidth / 2, item.rect.y + 35 - drawHeight / 2, drawWidth, drawHeight);
+                ctx.drawImage(image, item.rect.x + u(40) - drawWidth / 2, item.rect.y + item.rect.h / 2 - drawHeight / 2, drawWidth, drawHeight);
             }
         } else {
             ctx.fillStyle = item.color;
             ctx.beginPath();
-            ctx.arc(item.rect.x + 40, item.rect.y + 35, 20, 0, Math.PI * 2);
+            ctx.arc(item.rect.x + u(40), item.rect.y + item.rect.h / 2, u(20), 0, Math.PI * 2);
             ctx.fill();
         }
 
         ctx.fillStyle = '#FFF';
-        ctx.font = "20px Changa";
         ctx.textAlign = "left";
-        ctx.fillText(item.name, item.rect.x + 80, item.rect.y + 30);
+        fitFont(item.name, 20, item.rect.w - u(120));
+        ctx.fillText(item.name, item.rect.x + u(80), item.rect.y + u(30));
 
-        ctx.font = "16px Changa";
         if (isOwned) {
             ctx.fillStyle = isEquipped ? '#8A2BE2' : '#CCCCCC'; // Roxo se equipado
-            ctx.fillText(isEquipped ? "Equipado" : "Equipar", item.rect.x + 80, item.rect.y + 55);
+            fitFont(isEquipped ? "Equipado" : "Equipar", 16, item.rect.w - u(120));
+            ctx.fillText(isEquipped ? "Equipado" : "Equipar", item.rect.x + u(80), item.rect.y + u(55));
         } else {
             ctx.fillStyle = gameProps.totalCoins >= item.price ? '#8A2BE2' : '#FF6B6B'; // Roxo para comprar
-            ctx.fillText(`Comprar: ${item.price} 💰`, item.rect.x + 80, item.rect.y + 55);
+            fitFont(`Comprar: ${item.price} 💰`, 16, item.rect.w - u(120));
+            ctx.fillText(`Comprar: ${item.price} 💰`, item.rect.x + u(80), item.rect.y + u(55));
         }
     });
 
     // Botão de Comprar Carta
     ctx.fillStyle = '#222222'; // Fundo preto
-    ctx.fillRect(cardButton.rect.x, cardButton.rect.y, cardButton.rect.w - 20, cardButton.rect.h);
+    ctx.fillRect(cardButton.rect.x, cardButton.rect.y, cardButton.rect.w - u(20), cardButton.rect.h);
     ctx.strokeStyle = '#888888'; // Borda cinza
-    ctx.strokeRect(cardButton.rect.x, cardButton.rect.y, cardButton.rect.w - 20, cardButton.rect.h);
+    ctx.strokeRect(cardButton.rect.x, cardButton.rect.y, cardButton.rect.w - u(20), cardButton.rect.h);
     ctx.fillStyle = '#FFF';
     ctx.textAlign = "left";
-    ctx.font = "20px Changa";
-    ctx.fillText(`Carta de Imunidade [E] (x${gameProps.shopData.immunityCards})`, cardButton.rect.x + 20, cardButton.rect.y + 30);
+    fitFont(`Carta de Imunidade${isTouchUI ? '' : ' [E]'} (x${gameProps.shopData.immunityCards})`, 20, cardButton.rect.w - u(40));
+    ctx.fillText(`Carta de Imunidade${isTouchUI ? '' : ' [E]'} (x${gameProps.shopData.immunityCards})`, cardButton.rect.x + u(20), cardButton.rect.y + u(30));
     ctx.fillStyle = gameProps.totalCoins >= CARD_PRICE ? '#8A2BE2' : '#FF6B6B'; // Roxo para comprar
-    ctx.font = "16px Changa";
-    ctx.fillText(`Comprar 1 por: ${CARD_PRICE} 💰`, cardButton.rect.x + 20, cardButton.rect.y + 55);
+    fitFont(`Comprar 1 por: ${CARD_PRICE} 💰`, 16, cardButton.rect.w - u(40));
+    ctx.fillText(`Comprar 1 por: ${CARD_PRICE} 💰`, cardButton.rect.x + u(20), cardButton.rect.y + u(55));
 
     // Botão de Comprar Slow-Mo
     ctx.fillStyle = '#222222'; // Fundo preto
-    ctx.fillRect(slowMoButton.rect.x, slowMoButton.rect.y, slowMoButton.rect.w - 20, slowMoButton.rect.h);
+    ctx.fillRect(slowMoButton.rect.x, slowMoButton.rect.y, slowMoButton.rect.w - u(20), slowMoButton.rect.h);
     ctx.strokeStyle = '#888888'; // Borda cinza
-    ctx.strokeRect(slowMoButton.rect.x, slowMoButton.rect.y, slowMoButton.rect.w - 20, slowMoButton.rect.h);
+    ctx.strokeRect(slowMoButton.rect.x, slowMoButton.rect.y, slowMoButton.rect.w - u(20), slowMoButton.rect.h);
     ctx.fillStyle = '#FFF';
     ctx.textAlign = "left";
-    ctx.font = "20px Changa";
-    ctx.fillText(`Carga de Slow-Mo [T] (x${gameProps.shopData.slowMoCharges})`, slowMoButton.rect.x + 20, slowMoButton.rect.y + 30);
+    fitFont(`Carga de Slow-Mo${isTouchUI ? '' : ' [T]'} (x${gameProps.shopData.slowMoCharges})`, 20, slowMoButton.rect.w - u(40));
+    ctx.fillText(`Carga de Slow-Mo${isTouchUI ? '' : ' [T]'} (x${gameProps.shopData.slowMoCharges})`, slowMoButton.rect.x + u(20), slowMoButton.rect.y + u(30));
     ctx.fillStyle = gameProps.totalCoins >= SLOWMO_PRICE ? '#8A2BE2' : '#FF6B6B'; // Roxo para comprar
-    ctx.font = "16px Changa";
-    ctx.fillText(`Comprar 1 por: ${SLOWMO_PRICE} 💰`, slowMoButton.rect.x + 20, slowMoButton.rect.y + 55);
+    fitFont(`Comprar 1 por: ${SLOWMO_PRICE} 💰`, 16, slowMoButton.rect.w - u(40));
+    ctx.fillText(`Comprar 1 por: ${SLOWMO_PRICE} 💰`, slowMoButton.rect.x + u(20), slowMoButton.rect.y + u(55));
 
     ctx.restore();
 
     // Barra de Scroll
     const scrollbarHeight = (canvas.height - 280);
+    const maxScroll = getMaxShopScroll();
     const thumbHeight = scrollbarHeight * (scrollbarHeight / totalContentHeight);
-    const thumbY = (scrollY / (totalContentHeight - scrollbarHeight)) * (scrollbarHeight - thumbHeight);
+    const thumbY = maxScroll > 0 ? (scrollY / maxScroll) * (scrollbarHeight - thumbHeight) : 0;
     ctx.fillStyle = '#555';
-    ctx.fillRect(canvas.width - 15, 140, 10, scrollbarHeight);
+    ctx.fillRect(canvas.width - 15, CLIP_TOP, 10, scrollbarHeight);
     ctx.fillStyle = '#888';
-    ctx.fillRect(canvas.width - 15, 140 + thumbY, 10, thumbHeight);
+    ctx.fillRect(canvas.width - 15, CLIP_TOP + thumbY, 10, thumbHeight);
 
     // Botão de Sair
     ctx.fillStyle = '#6A0DAD'; // Roxo
     ctx.fillRect(exitButton.rect.x, exitButton.rect.y, exitButton.rect.w, exitButton.rect.h);
     ctx.fillStyle = '#FFF';
-    ctx.font = "24px Changa";
+    ctx.font = `${u(24)}px Changa`;
     ctx.textAlign = "center";
-    ctx.fillText("Sair", canvas.width / 2, exitButton.rect.y + 33);
+    ctx.fillText("Sair", canvas.width / 2, exitButton.rect.y + u(33));
+    ctx.textAlign = "left";
+}
+
+// Limite de scroll: garante que o último item (Slow-Mo) fique totalmente visível
+function getMaxShopScroll() {
+    const clipBottom = CLIP_TOP + (canvas.height - 280);
+    const contentBottom = CONTENT_TOP + totalContentHeight - ITEM_PITCH + ITEM_H;
+    return Math.max(0, contentBottom - clipBottom);
 }
 
 export function handleShopClick(x, y) {
@@ -226,7 +240,7 @@ export function handleShopClick(x, y) {
 
 export function handleShopScroll(event) {
     scrollY += event.deltaY * 0.5;
-    const maxScroll = totalContentHeight - (canvas.height - 280);
+    const maxScroll = getMaxShopScroll();
     if (scrollY < 0) scrollY = 0;
     if (scrollY > maxScroll) scrollY = maxScroll;
 }

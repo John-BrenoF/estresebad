@@ -1,4 +1,4 @@
-import { gameProps, ctx, canvas } from './state.js';
+import { gameProps, ctx, canvas, u } from './state.js';
 import { saveTotalCoins } from './storage.js';
 import { SKINS } from './constants.js';
 import { playAchievementUnlock } from './audio.js';
@@ -122,17 +122,17 @@ export function drawAchievements() {
     ctx.save();
     ctx.globalAlpha = alpha;
     ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-    ctx.fillRect(canvas.width / 2 - 150, 80, 300, 60);
+    ctx.fillRect(canvas.width / 2 - u(150), u(80), u(300), u(60));
     ctx.strokeStyle = '#888888'; // Cinza para bordas
-    ctx.strokeRect(canvas.width / 2 - 150, 80, 300, 60);
+    ctx.strokeRect(canvas.width / 2 - u(150), u(80), u(300), u(60));
 
     ctx.fillStyle = '#8A2BE2'; // Roxo para detalhes
-    ctx.font = 'bold 18px Changa';
+    ctx.font = `bold ${u(18)}px Changa`;
     ctx.textAlign = 'center';
-    ctx.fillText('🏆 Conquista Desbloqueada!', canvas.width / 2, 105);
+    ctx.fillText('🏆 Conquista Desbloqueada!', canvas.width / 2, u(105));
     ctx.fillStyle = '#FFF';
-    ctx.font = '16px Changa';
-    ctx.fillText(`${notification.name} (+${notification.reward} 💰)`, canvas.width / 2, 130);
+    ctx.font = `${u(15)}px Changa`;
+    ctx.fillText(`${notification.name} (+${notification.reward} 💰)`, canvas.width / 2, u(132));
     ctx.restore();
 
     if (notification.timer <= 0) {

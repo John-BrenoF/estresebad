@@ -1,4 +1,4 @@
-import { ctx, canvas, gameProps } from './state.js';
+import { ctx, canvas, gameProps, RENDER_SCALE } from './state.js';
 import { playScore, playExplosion, playBuy } from './audio.js';
 import { triggerShockwave } from './main.js';
 import { createParticles, createDust } from './particles.js';
@@ -24,7 +24,7 @@ export function drawPipes() {
 
         // Brilho Dourado
         ctx.shadowColor = '#FFD700';
-        ctx.shadowBlur = 20;
+        ctx.shadowBlur = (20) * RENDER_SCALE;
         ctx.fillStyle = '#FFD700';
         
         // Orbe
@@ -62,7 +62,7 @@ export function drawPipes() {
                 ctx.arc(0, 0, p.width / 2 - (j * 10), 0, Math.PI * 2);
                 ctx.strokeStyle = j % 2 === 0 ? '#00FFFF' : '#FF00FF'; // Ciano e Magenta
                 ctx.lineWidth = 4;
-                ctx.shadowBlur = 20;
+                ctx.shadowBlur = (20) * RENDER_SCALE;
                 ctx.shadowColor = ctx.strokeStyle;
                 
                 // Abertura no arco para dar efeito de espiral
@@ -121,7 +121,7 @@ export function drawPipes() {
             ctx.fillStyle = '#000'; // Interior preto
             ctx.strokeStyle = '#00FF00'; // Borda Verde Neon
             ctx.lineWidth = 4;
-            ctx.shadowBlur = 15;
+            ctx.shadowBlur = (15) * RENDER_SCALE;
             ctx.shadowColor = '#00FF00';
 
             // Desenha um único bloco no chão

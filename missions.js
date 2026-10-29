@@ -1,4 +1,4 @@
-import { ctx, canvas, gameProps } from './state.js';
+import { ctx, canvas, gameProps, u, fitFont, RENDER_SCALE } from './state.js';
 import { saveTotalCoins, getTotalCoins } from './storage.js';
 import { playGlitch } from './audio.js';
 import { drawBackdropBlur, draw3DButton } from './ui.js';
@@ -23,9 +23,11 @@ const REWARDS = [50, 75, 100];
 
 let dailyMissions = [];
 let scrollY = 0;
-const CARD_HEIGHT = 100;
-const CARD_GAP = 20;
-const closeButtonRect = { x: canvas.width / 2 - 75, y: canvas.height - 70, w: 150, h: 50 };
+const CARD_HEIGHT = u(100);
+const CARD_GAP = u(20);
+const CARD_TOP = u(140);
+const CARD_X = u(40);
+const closeButtonRect = { x: canvas.width / 2 - u(75), y: canvas.height - u(70), w: u(150), h: u(50) };
 
 function generateMissions() {
     const missions = [];
@@ -152,12 +154,21 @@ export function updateMissionProgress() {
 
 export function handleMissionScroll(e) {
     scrollY += e.deltaY * 0.5;
-    const totalHeight = dailyMissions.length * (CARD_HEIGHT + CARD_GAP) + 20; // Altura total do conteúdo
-    const viewHeight = canvas.height - 180; // Altura da área visível
-    const maxScroll = Math.max(0, totalHeight - viewHeight);
+    const maxScroll = getMaxMissionScroll();
     
     if (scrollY < 0) scrollY = 0;
     if (scrollY > maxScroll) scrollY = maxScroll;
+}
+
+// Altura total do conteúdo (do primeiro ao último cartão)
+function getMissionContentHeight() {
+    return CARD_TOP + dailyMissions.length * (CARD_HEIGHT + CARD_GAP) - CARD_GAP;
+}
+
+// Limite de scroll: garante que o último cartão fique totalmente visível
+function getMaxMissionScroll() {
+    const clipBottom = 130 + (canvas.height - 180);
+    return Math.max(0, getMissionContentHeight() - clipBottom);
 }
 
 export function drawMissionMap() {
@@ -174,14 +185,14 @@ export function drawMissionMap() {
 
     // Título
     ctx.fillStyle = '#8A2BE2'; // Roxo
-    ctx.font = "bold 32px Changa";
+    ctx.font = `bold ${u(32)}px Changa`;
     ctx.textAlign = "center";
-    ctx.fillText("MISSÕES DIÁRIAS", canvas.width / 2, 80);
+    ctx.fillText("MISSÕES DIÁRIAS", canvas.width / 2, u(80));
     
     // Subtítulo
     ctx.fillStyle = '#AAA';
-    ctx.font = "16px Changa";
-    ctx.fillText("Complete para ganhar moedas!", canvas.width / 2, 110);
+    ctx.font = `${u(16)}px Changa`;
+    ctx.fillText("Complete para ganhar moedas!", canvas.width / 2, u(110));
 
     // Área de conteúdo com Clip para Scroll
     ctx.save();
@@ -194,9 +205,9 @@ export function drawMissionMap() {
     const completedNormalMissions = dailyMissions.filter(m => !m.isSecret && m.completed).length;
 
     dailyMissions.forEach((mission, index) => {
-        const y = 140 + index * (CARD_HEIGHT + CARD_GAP);
-        const x = 40;
-        const w = canvas.width - 80;
+        const y = CARD_TOP + index * (CARD_HEIGHT + CARD_GAP);
+        const x = CARD_X;
+        const w = canvas.width - u(80);
 
         // Fundo do Card (Gradiente)
         const cardGrad = ctx.createLinearGradient(x, y, x + w, y + CARD_HEIGHT);
@@ -211,9 +222,9 @@ export function drawMissionMap() {
         ctx.fillStyle = cardGrad;
         // Sombra suave
         ctx.shadowColor = '#000';
-        ctx.shadowBlur = 5;
+        ctx.shadowBlur = (5) * RENDER_SCALE;
         ctx.fillRect(x, y, w, CARD_HEIGHT);
-        ctx.shadowBlur = 0;
+        ctx.shadowBlur = (0) * RENDER_SCALE;
         
         // Borda do Card
         // Simplificado: Sem borda grossa, apenas cor de fundo distinta
@@ -230,21 +241,21 @@ export function drawMissionMap() {
         }
 
         // Ícone
-        ctx.font = "30px Changa";
+        ctx.font = `${u(30)}px Changa`;
         ctx.textAlign = "center";
-        ctx.fillText(displayIcon || '🎯', x + 30, y + 45);
+        ctx.fillText(displayIcon || '🎯', x + u(30), y + u(45));
 
         // Texto da Missão
         ctx.fillStyle = '#FFF';
-        ctx.font = "bold 16px Changa";
         ctx.textAlign = "left";
-        ctx.fillText(displayText, x + 60, y + 30);
+        fitFont(displayText, 16, w - u(70), 'bold');
+        ctx.fillText(displayText, x + u(60), y + u(30));
 
         // Barra de Progresso
-        const barWidth = w - 70;
-        const barHeight = 10;
-        const barX = x + 60;
-        const barY = y + 45;
+        const barWidth = w - u(70);
+        const barHeight = u(10);
+        const barX = x + u(60);
+        const barY = y + u(45);
         
         // Fundo da barra
         ctx.fillStyle = '#111';
@@ -257,25 +268,28 @@ export function drawMissionMap() {
 
         // Preenchimento da barra com brilho se completado
         ctx.fillStyle = '#8A2BE2';
-        if (mission.completed && !mission.claimed) ctx.shadowColor = '#8A2BE2'; ctx.shadowBlur = 10;
+        if (mission.completed && !mission.claimed) ctx.shadowColor = '#8A2BE2'; ctx.shadowBlur = (10) * RENDER_SCALE;
         ctx.fillRect(barX, barY, barWidth * progressPercent, barHeight); 
-        ctx.shadowBlur = 0;
+        ctx.shadowBlur = (0) * RENDER_SCALE;
 
         // Texto de Status / Botão
-        ctx.font = "14px Changa";
         if (isLockedSecret) {
             ctx.fillStyle = '#AAA';
-            ctx.fillText(`Desafio Secreto`, x + 60, y + 80);
+            fitFont(`Desafio Secreto`, 14, w - u(70));
+            ctx.fillText(`Desafio Secreto`, x + u(60), y + u(80));
         } else if (mission.completed && !mission.claimed) {
             // Botão de Resgatar
             ctx.fillStyle = '#00FF00'; // Verde chamativo
-            ctx.fillText(`✨ TOQUE PARA RESGATAR (+${mission.reward} 💰)`, x + 60, y + 80);
+            fitFont(`✨ TOQUE PARA RESGATAR (+${mission.reward} 💰)`, 14, w - u(70));
+            ctx.fillText(`✨ TOQUE PARA RESGATAR (+${mission.reward} 💰)`, x + u(60), y + u(80));
         } else if (mission.claimed) {
             ctx.fillStyle = '#888';
-            ctx.fillText('✅ Recompensa Coletada', x + 60, y + 80);
+            fitFont('✅ Recompensa Coletada', 14, w - u(70));
+            ctx.fillText('✅ Recompensa Coletada', x + u(60), y + u(80));
         } else {
             ctx.fillStyle = '#CCC';
-            ctx.fillText(`Progresso: ${Math.floor(mission.progress)}/${mission.target} (+${mission.reward} 💰)`, x + 60, y + 80);
+            fitFont(`Progresso: ${Math.floor(mission.progress)}/${mission.target} (+${mission.reward} 💰)`, 14, w - u(70));
+            ctx.fillText(`Progresso: ${Math.floor(mission.progress)}/${mission.target} (+${mission.reward} 💰)`, x + u(60), y + u(80));
         }
         
         // Borda de seleção para resgatar
@@ -289,12 +303,13 @@ export function drawMissionMap() {
     ctx.restore();
 
     // Barra de Scroll
-    const totalHeight = dailyMissions.length * (CARD_HEIGHT + CARD_GAP) + 20;
+    const totalHeight = getMissionContentHeight();
     const viewHeight = canvas.height - 180;
+    const maxScroll = getMaxMissionScroll();
     if (totalHeight > viewHeight) {
         const scrollbarHeight = viewHeight;
         const thumbHeight = scrollbarHeight * (viewHeight / totalHeight);
-        const thumbY = (scrollY / (totalHeight - viewHeight)) * (scrollbarHeight - thumbHeight);
+        const thumbY = maxScroll > 0 ? (scrollY / maxScroll) * (scrollbarHeight - thumbHeight) : 0;
         
         ctx.fillStyle = '#555';
         ctx.fillRect(canvas.width - 15, 130, 10, scrollbarHeight);
@@ -309,7 +324,7 @@ export function drawMissionMap() {
 export function handleMissionClick(x, y) {
     const adjustedY = y + scrollY;
     dailyMissions.forEach((mission, index) => {
-        const rect = { x: 40, y: 140 + index * (CARD_HEIGHT + CARD_GAP), w: canvas.width - 80, h: CARD_HEIGHT };
+        const rect = { x: CARD_X, y: CARD_TOP + index * (CARD_HEIGHT + CARD_GAP), w: canvas.width - u(80), h: CARD_HEIGHT };
         
         if (mission.completed && !mission.claimed &&
             x > rect.x && x < rect.x + rect.w && adjustedY > rect.y && adjustedY < rect.y + rect.h) {

@@ -1,4 +1,4 @@
-import { ctx, canvas, gameProps } from './state.js';
+import { ctx, canvas, gameProps, RENDER_SCALE } from './state.js';
 
 const stars = [];
 const buildings = [];
@@ -285,7 +285,7 @@ export function updateAndDrawBackground() {
         
         // Brilho base
         ctx.shadowColor = '#FFFFFF';
-        ctx.shadowBlur = 30;
+        ctx.shadowBlur = (30) * RENDER_SCALE;
         ctx.fillStyle = 'rgba(244, 246, 240, 0.2)';
         
         // Desenha várias fatias para simular o reflexo quebrando nas ondas
@@ -512,13 +512,13 @@ export function updateAndDrawBackground() {
 
         // Brilho
         ctx.shadowColor = '#FFA500';
-        ctx.shadowBlur = 50;
+        ctx.shadowBlur = (50) * RENDER_SCALE;
         ctx.fillStyle = '#FFD700';
         
         ctx.beginPath();
         ctx.arc(0, 0, 35, 0, Math.PI * 2);
         ctx.fill();
-        ctx.shadowBlur = 0;
+        ctx.shadowBlur = (0) * RENDER_SCALE;
         
         ctx.restore();
 
@@ -565,13 +565,13 @@ export function updateAndDrawBackground() {
 
         // Brilho
         ctx.shadowColor = '#FFFFFF';
-        ctx.shadowBlur = 60; // Brilho aumentado
+        ctx.shadowBlur = (60) * RENDER_SCALE; // Brilho aumentado
         ctx.fillStyle = '#F4F6F0';
         
         ctx.beginPath();
         ctx.arc(0, 0, 30, 0, Math.PI * 2);
         ctx.fill();
-        ctx.shadowBlur = 0;
+        ctx.shadowBlur = (0) * RENDER_SCALE;
 
         // Crateras
         ctx.fillStyle = '#E0E0E0';

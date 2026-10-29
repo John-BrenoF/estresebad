@@ -1,4 +1,4 @@
-import { ctx, canvas, gameProps } from './state.js';
+import { ctx, canvas, gameProps, RENDER_SCALE } from './state.js';
 import { saveTotalCoins, getTotalCoins, saveBossDefeatedCount } from './storage.js';
 import { triggerScreenShake } from './main.js';
 import { playBossDefeated, playBossLaser, playBossRedLightning, playExplosion, playGlitch } from './audio.js';
@@ -454,12 +454,12 @@ export function drawBoss() {
         } else if (b.state === 'firing') {
             // Faixa externa (Vermelho Brilhante)
             ctx.shadowColor = '#ff0000';
-            ctx.shadowBlur = 40;
+            ctx.shadowBlur = (40) * RENDER_SCALE;
             ctx.fillStyle = 'rgba(255, 0, 0, 0.69)';
             ctx.fillRect(-longLen/2, -b.width/2, longLen, b.width);
             
             // Faixa interna (Vermelho Escuro "Raio")
-            ctx.shadowBlur = 10;
+            ctx.shadowBlur = (10) * RENDER_SCALE;
             ctx.fillStyle = '#a80e0e'; // Vermelho escuro sangue
             const innerWidth = b.width * 0.4;
             ctx.fillRect(-longLen/2, -innerWidth/2, longLen, innerWidth);
@@ -490,7 +490,7 @@ export function drawBoss() {
             ctx.fillStyle = (p.type === 'player_shot' || p.type === 'player_shot_red') ? (p.type === 'player_shot_red' ? '#FF0000' : '#00FFFF') : '#FF00FF';
         }
         if (p.type === 'player_shot' || p.type === 'player_shot_red') ctx.shadowColor = ctx.fillStyle;
-        ctx.shadowBlur = p.type === 'player_shot' ? 15 : 0;
+        ctx.shadowBlur = (p.type === 'player_shot' ? 15 : 0) * RENDER_SCALE;
         ctx.beginPath();
         if (p.type === 'wave') {
             ctx.arc(p.x, p.y, p.size * 1.5, 0, Math.PI * 2);
@@ -498,7 +498,7 @@ export function drawBoss() {
             ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         }
         ctx.fill();
-        ctx.shadowBlur = 0;
+        ctx.shadowBlur = (0) * RENDER_SCALE;
     });
 
     // Desenhar Raio Vermelho (Ataque Especial)
@@ -535,15 +535,15 @@ export function drawBoss() {
 
     if (boss.isHealing) {
         ctx.shadowColor = '#00FF00';
-        ctx.shadowBlur = 30;
+        ctx.shadowBlur = (30) * RENDER_SCALE;
     } else if (isEnraged) {
         ctx.shadowColor = '#FF0000';
-        ctx.shadowBlur = 25;
+        ctx.shadowBlur = (25) * RENDER_SCALE;
     } else {
         // Efeito de aura/fumaça fantasmagórica pulsante (Melhorado)
         const auraPulse = 0.5 + (Math.sin(boss.frame * 0.5) + 1) / 2; // Pulsação mais ampla e sinistra
         ctx.shadowColor = `rgba(0, 0, 0, ${0.8 * auraPulse})`; // Aura negra corrigida e mais forte
-        ctx.shadowBlur = 20 + 20 * auraPulse; // Blur maior para destacar o boss
+        ctx.shadowBlur = (20 + 20 * auraPulse) * RENDER_SCALE; // Blur maior para destacar o boss
     }
 
     ctx.beginPath();
@@ -613,7 +613,7 @@ export function drawBoss() {
     } else {
         ctx.fill(); // O preenchimento principal
     }
-    ctx.shadowBlur = 0; // Resetar sombra
+    ctx.shadowBlur = (0) * RENDER_SCALE; // Resetar sombra
 
     // Olhos do Boss
     const eyeSizeBase = isEnraged ? 14 : 10;
@@ -633,7 +633,7 @@ export function drawBoss() {
 
     if (boss.isHealing) {
         ctx.shadowColor = '#FF0000';
-        ctx.shadowBlur = 40;
+        ctx.shadowBlur = (40) * RENDER_SCALE;
     }
 
     ctx.fillStyle = '#444';
@@ -653,5 +653,5 @@ export function drawBoss() {
         ctx.lineWidth = 1;
     }
     ctx.strokeRect(barX, 20, barWidth, 20);
-    ctx.shadowBlur = 0;
+    ctx.shadowBlur = (0) * RENDER_SCALE;
 }

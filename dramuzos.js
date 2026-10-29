@@ -1,4 +1,4 @@
-import { ctx, canvas, gameProps } from './state.js';
+import { ctx, canvas, gameProps, RENDER_SCALE } from './state.js';
 import { saveTotalCoins } from './storage.js';
 import { triggerScreenShake } from './main.js';
 import { playBossDefeated, playSoundWave, playExplosion, playGlitch, playBossLaser } from './audio.js';
@@ -529,7 +529,7 @@ export function drawDramuzos() {
             const currentWidth = b.width + pulse;
             
             ctx.shadowColor = '#FF0000';
-            ctx.shadowBlur = 30 + Math.random() * 20;
+            ctx.shadowBlur = (30 + Math.random() * 20) * RENDER_SCALE;
             ctx.fillStyle = '#8B0000'; // Vermelho Sangue
             ctx.fillRect(-length/2, -currentWidth/2, length, currentWidth);
             
@@ -537,7 +537,7 @@ export function drawDramuzos() {
             ctx.fillStyle = '#FF4444';
             ctx.fillRect(-length/2, -currentWidth/4, length, currentWidth/2);
             
-            ctx.shadowBlur = 0;
+            ctx.shadowBlur = (0) * RENDER_SCALE;
 
             // Efeito de Eletricidade/Raio interno (Zigue-Zague)
             ctx.strokeStyle = '#FFC0CB'; // Rosado brilhante
@@ -682,7 +682,7 @@ const bodyBreath = Math.sin(dramuzos.frame * 0.1) * 3;
 // Cor base (preto profundo com glow)
 ctx.fillStyle = '#000000';
 ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
-ctx.shadowBlur = 30;
+ctx.shadowBlur = (30) * RENDER_SCALE;
 
 // Asas
 ctx.beginPath();
@@ -706,7 +706,7 @@ ctx.quadraticCurveTo(40, wingY + 30, 20, 20);
 ctx.fill();
 
 // Corpo com leve respiração
-ctx.shadowBlur = 25;
+ctx.shadowBlur = (25) * RENDER_SCALE;
 ctx.fillStyle = '#010101';
 ctx.beginPath();
 ctx.ellipse(0, bodyBreath, 40, 50 + bodyBreath, 0, 0, Math.PI * 2);
@@ -726,14 +726,14 @@ ctx.fill();
 // Olhos vermelhos com brilho
 ctx.fillStyle = '#ff0000';
 ctx.shadowColor = 'rgba(255, 0, 0, 0.9)';
-ctx.shadowBlur = 25;
+ctx.shadowBlur = (25) * RENDER_SCALE;
 
 ctx.beginPath();
 ctx.arc(-15, -10, 8, 0, Math.PI * 2);
 ctx.arc(15, -10, 8, 0, Math.PI * 2);
 ctx.fill();
 
-ctx.shadowBlur = 0;
+ctx.shadowBlur = (0) * RENDER_SCALE;
 
 // Boca / dentes
 ctx.fillStyle = '#FFF';
@@ -889,7 +889,7 @@ ctx.globalAlpha = 1;
 
 // sombra externa (profundidade)
 ctx.shadowColor = 'rgba(0,0,0,0.7)';
-ctx.shadowBlur = 6;
+ctx.shadowBlur = (6) * RENDER_SCALE;
 
 // moldura principal
 ctx.lineWidth = 2;
@@ -897,7 +897,7 @@ ctx.strokeStyle = '#3a3a3a';
 ctx.strokeRect(barX, barY, barWidth, barHeight);
 
 // linha interna fina (detalhe elegante)
-ctx.shadowBlur = 0;
+ctx.shadowBlur = (0) * RENDER_SCALE;
 ctx.lineWidth = 1;
 ctx.strokeStyle = '#000';
 ctx.strokeRect(barX + 1, barY + 1, barWidth - 2, barHeight - 2);

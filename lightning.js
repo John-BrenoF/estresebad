@@ -1,4 +1,4 @@
-import { ctx, canvas, gameProps } from './state.js';
+import { ctx, canvas, gameProps, RENDER_SCALE } from './state.js';
 import { playThunder } from './audio.js';
 
 let lightning = {
@@ -109,7 +109,7 @@ export function drawLightning() {
         ctx.lineWidth = 5;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
-        ctx.shadowBlur = 20;
+        ctx.shadowBlur = (20) * RENDER_SCALE;
         ctx.shadowColor = '#00FFFF'; // Brilho azul elétrico
         
         ctx.beginPath();

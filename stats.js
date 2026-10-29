@@ -1,16 +1,16 @@
-import { ctx, canvas, gameProps } from './state.js';
+import { ctx, canvas, gameProps, u, RENDER_SCALE } from './state.js';
 import { getScoreHistory, getTopScores } from './storage.js';
 import { drawBackdropBlur, draw3DButton } from './ui.js';
 
-const closeButtonRect = { x: canvas.width / 2 - 75, y: canvas.height - 70, w: 150, h: 50 };
+const closeButtonRect = { x: canvas.width / 2 - u(75), y: canvas.height - u(70), w: u(150), h: u(50) };
 
 function drawGraph(history) {
-    const graphRect = { x: 50, y: 300, w: canvas.width - 100, h: 150 };
+    const graphRect = { x: u(50), y: u(300), w: canvas.width - u(100), h: u(150) };
     const scores = history.map(h => h.score);
     
     if (scores.length < 2) {
         ctx.fillStyle = '#AAA';
-        ctx.font = "18px Changa";
+        ctx.font = `${u(18)}px Changa`;
         ctx.textAlign = "center";
         ctx.fillText("Jogue pelo menos 2 partidas para ver o gráfico.", canvas.width / 2, graphRect.y + graphRect.h / 2);
         return;
@@ -33,14 +33,14 @@ function drawGraph(history) {
     ctx.strokeStyle = '#8A2BE2';
     ctx.lineWidth = 3;
     ctx.shadowColor = '#8A2BE2';
-    ctx.shadowBlur = 10;
+    ctx.shadowBlur = (10) * RENDER_SCALE;
     ctx.beginPath();
     ctx.moveTo(points[0].x, points[0].y);
     for (let i = 1; i < points.length; i++) {
         ctx.lineTo(points[i].x, points[i].y);
     }
     ctx.stroke();
-    ctx.shadowBlur = 0;
+    ctx.shadowBlur = (0) * RENDER_SCALE;
 
     // Desenhar pontos no gráfico
     ctx.fillStyle = '#FFF';
@@ -52,11 +52,11 @@ function drawGraph(history) {
 
     // Labels do gráfico
     ctx.fillStyle = '#AAA';
-    ctx.font = "12px Changa";
+    ctx.font = `${u(12)}px Changa`;
     ctx.textAlign = "left";
-    ctx.fillText(`Max: ${Math.round(maxScore)}`, graphRect.x + 5, graphRect.y - 5);
+    ctx.fillText(`Max: ${Math.round(maxScore)}`, graphRect.x + u(5), graphRect.y - u(5));
     ctx.textAlign = "right";
-    ctx.fillText(`Últimos ${scores.length} jogos`, graphRect.x + graphRect.w - 5, graphRect.y - 5);
+    ctx.fillText(`Últimos ${scores.length} jogos`, graphRect.x + graphRect.w - u(5), graphRect.y - u(5));
 }
 
 export function drawStatsScreen() {
@@ -64,41 +64,43 @@ export function drawStatsScreen() {
 
     // Título
     ctx.fillStyle = '#8A2BE2'; // Roxo
-    ctx.font = "bold 32px Changa";
+    ctx.font = `bold ${u(32)}px Changa`;
     ctx.textAlign = "center";
-    ctx.fillText("ESTATÍSTICAS", canvas.width / 2, 80);
+    ctx.fillText("ESTATÍSTICAS", canvas.width / 2, u(80));
 
     // Seção de Melhores Pontuações
     ctx.fillStyle = '#FFF';
-    ctx.font = "bold 20px Changa";
-    ctx.fillText("Melhores Pontuações", canvas.width / 2, 130);
+    ctx.font = `bold ${u(20)}px Changa`;
+    ctx.fillText("Melhores Pontuações", canvas.width / 2, u(130));
 
     const topScores = getTopScores(5);
-    ctx.font = "18px Changa";
     if (topScores.length === 0) {
+        ctx.font = `${u(18)}px Changa`;
         ctx.fillStyle = '#AAA';
-        ctx.fillText("Nenhum recorde ainda.", canvas.width / 2, 170);
+        ctx.fillText("Nenhum recorde ainda.", canvas.width / 2, u(170));
     } else {
         topScores.forEach((entry, index) => {
-            const y = 160 + index * 25;
+            const y = u(160) + index * u(25);
             const date = new Date(entry.date).toLocaleDateString();
+            ctx.font = `${u(18)}px Changa`;
             ctx.fillStyle = '#DDD';
             ctx.textAlign = "left";
-            ctx.fillText(`${index + 1}.`, 80, y);
+            ctx.fillText(`${index + 1}.`, u(80), y);
             ctx.textAlign = "center";
             ctx.fillStyle = '#FFF';
             ctx.fillText(`${entry.score} pts`, canvas.width / 2, y);
             ctx.textAlign = "right";
             ctx.fillStyle = '#AAA';
-            ctx.fillText(`${date}`, canvas.width - 80, y);
+            ctx.font = `${u(13)}px Changa`;
+            ctx.fillText(`${date}`, canvas.width - u(80), y);
         });
     }
 
     // Seção do Gráfico
     ctx.fillStyle = '#FFF';
-    ctx.font = "bold 20px Changa";
+    ctx.font = `bold ${u(20)}px Changa`;
     ctx.textAlign = "center";
-    ctx.fillText("Progresso Recente", canvas.width / 2, 280);
+    ctx.fillText("Progresso Recente", canvas.width / 2, u(280));
     
     const history = getScoreHistory().slice(-20); // Pega os últimos 20 jogos
     drawGraph(history);
